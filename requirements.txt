@@ -5,3 +5,14 @@ pydantic
 python-dotenv
 httpx
 openai
+langchain
+langchain-openai
+langchain-community
+tavily-python
+pypdf2
+markdown
+beautifulsoup4
+aiofiles
+python-multipart
+aiosqlite
+rich

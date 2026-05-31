@@ -1,0 +1,2 @@
+{"event": "job_started", "job_id": "b6b018e0-03f9-4004-9b93-d378c03e38a1", "timestamp": "2026-05-30T13:14:43.641745+00:00", "query": "Generate AI semiconductor market research for NVIDIA and AMD", "depth": "standard"}
+{"event": "job_complete", "job_id": "b6b018e0-03f9-4004-9b93-d378c03e38a1", "timestamp": "2026-05-30T13:15:25.989897+00:00", "query": "Generate AI semiconductor market research for NVIDIA and AMD", "report_path": "reports/report_b6b018e0_20260530T131525Z.md", "sources_count": 20, "duration": 42.349602}

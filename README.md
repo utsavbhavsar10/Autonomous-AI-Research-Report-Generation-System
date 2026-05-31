@@ -1,446 +1,333 @@
 # Autonomous AI Research & Report Generation System
-## Complete Implementation Documentation
+## Clean Implementation Plan — No n8n Required
 
-> **Role**: Principal AI Architect · Senior Backend Engineer · AI Workflow Engineer · Enterprise System Designer  
-> **Scope**: Local Development · Portfolio-Grade · Agentic AI System  
-> **Stack**: Python · FastAPI · n8n · LangGraph · CrewAI · RAG · Multi-Agent Orchestration
+> **Stack**: Python · FastAPI · LangGraph · CrewAI · RAG  
+> **Scope**: Local Development · Portfolio-Grade · Agentic AI  
+> **n8n**: Removed from core. Optional integration guide included at the end.
 
 ---
 
 ## Table of Contents
 
-1. [Executive Overview](#1-executive-overview)
-2. [Learning Roadmap Before Building](#2-learning-roadmap-before-building)
-3. [Project Development Philosophy](#3-project-development-philosophy)
-4. [Core Technology Stack](#4-core-technology-stack)
-5. [Phase-Wise Development Plan](#5-phase-wise-development-plan)
-6. [Day-Wise Implementation Plan (4 Days)](#6-day-wise-implementation-plan-4-days)
-7. [Folder Structure Evolution](#7-folder-structure-evolution)
-8. [Detailed Backend Architecture](#8-detailed-backend-architecture)
-9. [n8n Workflow Architecture](#9-n8n-workflow-architecture)
-10. [LangGraph Architecture](#10-langgraph-architecture)
-11. [CrewAI Multi-Agent Architecture](#11-crewai-multi-agent-architecture)
-12. [RAG Architecture](#12-rag-architecture)
-13. [Memory Architecture](#13-memory-architecture)
-14. [API Design](#14-api-design)
-15. [Local Development Setup Guide](#15-local-development-setup-guide)
-16. [Important Engineering Concepts](#16-important-engineering-concepts)
-17. [Common Mistakes & Solutions](#17-common-mistakes--solutions)
-18. [MVP Strategy](#18-mvp-strategy)
-19. [Future Enhancements](#19-future-enhancements)
-20. [Final Expected Architecture](#20-final-expected-architecture)
-21. [Final Project Outcome](#21-final-project-outcome)
+1. [What Changed (No n8n)](#1-what-changed-no-n8n)
+2. [Final Tech Stack](#2-final-tech-stack)
+3. [Complete Folder Structure](#3-complete-folder-structure)
+4. [Environment Setup](#4-environment-setup)
+5. [Day 1 — FastAPI Foundation + Notification Service](#5-day-1--fastapi-foundation--notification-service)
+6. [Day 2 — Research Pipeline + Report Generation](#6-day-2--research-pipeline--report-generation)
+7. [Day 3 — LangGraph Orchestration](#7-day-3--langgraph-orchestration)
+8. [Day 4 — CrewAI Multi-Agent System](#8-day-4--crewai-multi-agent-system)
+9. [Folder Structure Evolution](#9-folder-structure-evolution)
+10. [Full Pipeline Flow](#10-full-pipeline-flow)
+11. [API Design](#11-api-design)
+12. [Job Status & Tracking System](#12-job-status--tracking-system)
+13. [Common Mistakes & Solutions](#13-common-mistakes--solutions)
+14. [Optional: Add n8n Later](#14-optional-add-n8n-later)
 
 ---
 
-## 1. Executive Overview
+## 1. What Changed (No n8n)
 
-### Project Goal
+Everything n8n handled is now done in clean Python inside the project itself.
 
-The **Autonomous AI Research & Report Generation System** is a local, multi-agent AI system that accepts a natural language research query and autonomously plans, researches, analyzes, and generates a structured professional report — without human intervention at each step.
+| Old (with n8n) | New (pure Python) |
+|---|---|
+| n8n webhook trigger on job start | `NotificationService.job_started()` — logs to file + terminal |
+| n8n webhook on report complete | `NotificationService.job_complete()` — logs + prints path |
+| n8n email notification | `EmailNotifier` via Python `smtplib` (optional) |
+| n8n workflow execution log | `jobs_log.json` — append-only event log |
+| n8n job status dashboard | `GET /research/{job_id}` — FastAPI status endpoint |
+| n8n file save action | `ReportService.save_report()` — direct async file write |
 
-**Example query:**
-```
-"Generate AI semiconductor market research report for NVIDIA and AMD."
-```
-
-The system will:
-- Break down the query into sub-tasks
-- Search the internet and/or local documents
-- Extract and analyze relevant information
-- Write, review, and refine a structured report
-- Generate PDF output
-- Trigger downstream automations via n8n
+**Result**: Fewer moving parts, easier debugging, faster startup, same functionality.
 
 ---
 
-### Why This Project Matters
+## 2. Final Tech Stack
 
-This project sits at the intersection of three of the most powerful trends in enterprise AI:
+### Core Stack (All 4 Days)
 
-| Trend | What This Project Demonstrates |
-|-------|-------------------------------|
-| Agentic AI | Agents plan and execute tasks autonomously |
-| Workflow Orchestration | LangGraph manages state, retries, and routing |
-| Multi-Agent Collaboration | CrewAI enables role-based agent teams |
-| Automation Integration | n8n connects the AI pipeline to real-world actions |
-| RAG Systems | Vector search enables context-aware document retrieval |
+| Technology | Role | Why |
+|-----------|------|-----|
+| **Python 3.11+** | Primary language | Best AI ecosystem, async support |
+| **FastAPI** | REST API framework | Async-native, auto docs, Pydantic validation |
+| **LangGraph** | Workflow orchestration | Stateful graph, retry logic, conditional routing |
+| **CrewAI** | Multi-agent framework | Role-based agents, task delegation |
+| **OpenAI API** | LLM backbone | GPT-4o for all reasoning and generation |
+| **Tavily** | Web search | Clean API, best for AI agent search tasks |
+| **SQLite** | Job persistence | Zero-config local database for job tracking |
+| **Chroma** | Vector database | Local vector store for RAG (Phase 3) |
+
+### Replacing n8n With Python
+
+| Need | Python Solution |
+|------|----------------|
+| Event logging | `NotificationService` → `jobs_log.json` |
+| Job status tracking | SQLite `jobs` table |
+| Terminal alerts | `print` + `logging` with colors |
+| Email notification | `smtplib` (optional, 15 lines) |
+| File saving | `aiofiles` async file writes |
+| Scheduling | `APScheduler` or `cron` (Phase 3) |
 
 ---
 
-### What Skills It Demonstrates
+## 3. Complete Folder Structure
 
-Building this system proves mastery of:
-
-- **Backend Engineering**: FastAPI, async Python, REST API design
-- **AI Orchestration**: LangGraph state machines, conditional routing
-- **Multi-Agent Systems**: CrewAI role-based agents, task delegation
-- **Retrieval-Augmented Generation**: Embeddings, vector databases, chunking
-- **Workflow Automation**: n8n webhooks, event-driven pipelines
-- **System Architecture**: Modular, scalable, enterprise-grade design patterns
-
----
-
-### Why Agentic Workflows Are Important
-
-Traditional AI pipelines are **linear** — input goes in, output comes out. Agentic systems are **dynamic**:
+### Final Structure (End of Day 4)
 
 ```
-Traditional:  Query → LLM → Response
-
-Agentic:      Query
-                ↓
-              Planner Agent → breaks into tasks
-                ↓
-              Research Agent → searches web/docs
-                ↓
-              Analyst Agent → evaluates findings
-                ↓
-              Writer Agent → drafts structured report
-                ↓
-              Reviewer Agent → critiques and refines
-                ↓
-              Final Report + PDF + n8n Trigger
-```
-
-Agentic systems can handle **ambiguity, failure, multi-step reasoning**, and **tool use** — capabilities that are transforming enterprise software.
-
----
-
-### Enterprise Use Cases
-
-- Market research automation for investment firms
-- Competitive intelligence pipelines for product teams
-- Regulatory compliance document analysis
-- Legal document summarization and review
-- Technical literature synthesis for R&D teams
-
----
-
-## 2. Learning Roadmap Before Building
-
-### Recommended Learning Order
-
-Follow this sequence before or during development. Do not skip phases — each builds on the previous.
-
----
-
-### Stage 1 — Python & Async Fundamentals (Day 0 or alongside Day 1)
-
-**What to learn:**
-- Python virtual environments (`venv`, `pip`)
-- `async`/`await` patterns in Python
-- Python type hints (`BaseModel`, `TypedDict`)
-- HTTP concepts: request/response, status codes, headers
-- JSON handling
-
-**Resources:**
-- Python `asyncio` official docs
-- Real Python: Async IO tutorial
-
----
-
-### Stage 2 — FastAPI Fundamentals (Day 1)
-
-**What to learn:**
-- Creating routes with `@app.get`, `@app.post`
-- Pydantic models for request/response validation
-- Dependency injection (`Depends`)
-- Background tasks
-- OpenAPI docs (auto-generated at `/docs`)
-
-**Key concept:** FastAPI is your system's front door. Every external call — from Postman, n8n, or a frontend — enters through FastAPI.
-
----
-
-### Stage 3 — n8n Basics (Day 1)
-
-**What to learn:**
-- Installing n8n locally with `npx n8n`
-- Creating workflows in the visual editor
-- Webhook triggers
-- HTTP Request nodes
-- Connecting nodes with data flow
-
-**Key concept:** n8n is your automation backbone. It listens for events and triggers actions — sending emails, saving files, calling APIs.
-
----
-
-### Stage 4 — LLM Fundamentals (Day 2)
-
-**What to learn:**
-- How LLMs work (tokens, context window, temperature)
-- OpenAI API basics (`chat.completions.create`)
-- System prompts vs. user prompts
-- Prompt engineering basics
-- Tool/function calling
-
----
-
-### Stage 5 — LangGraph Basics (Day 3)
-
-**What to learn:**
-- `StateGraph` concept
-- Nodes (functions) and Edges (routing logic)
-- `TypedDict` for state definition
-- Conditional edges
-- Checkpointing and persistence
-
----
-
-### Stage 6 — CrewAI Basics (Day 4)
-
-**What to learn:**
-- `Agent` class: role, goal, backstory
-- `Task` class: description, expected output, agent assignment
-- `Crew` class: orchestrating agents and tasks
-- Tools: web search, file reading, custom tools
-
----
-
-### Stage 7 — RAG Basics (After Day 4 or Phase 3)
-
-**What to learn:**
-- Document loaders (PDF, text, web)
-- Text chunking strategies
-- Embeddings (OpenAI, sentence-transformers)
-- Vector stores (Chroma, FAISS, Qdrant)
-- Similarity search
-
----
-
-## 3. Project Development Philosophy
-
-### Why Start Simple
-
-The single biggest mistake in AI systems projects is **building everything at once**. You end up with:
-- A system that never works end-to-end
-- Debugging nightmares (is the bug in the LangGraph node, the CrewAI task, the RAG retriever, or the FastAPI layer?)
-- Loss of momentum and motivation
-
-**The antidote**: Ship a working system on Day 1, even if it's primitive. Then add complexity layer by layer.
-
----
-
-### MVP-First Strategy
-
-```
-Day 1 MVP:  Query → FastAPI → n8n webhook → simple response
-Day 2 MVP:  Query → FastAPI → Research Service → markdown report
-Day 3 MVP:  Query → FastAPI → LangGraph workflow → structured report
-Day 4 MVP:  Query → FastAPI → LangGraph → CrewAI agents → full report + n8n notification
-```
-
-Each day, the system is **fully functional** — just at a different sophistication level.
-
----
-
-### Principles
-
-**Modular Architecture**: Every component is a separate module. Swap the LLM, change the vector DB, replace the search tool — without touching the rest.
-
-**Avoid Complexity Explosion**: Add one new technology at a time. Validate it works before adding the next.
-
-**Incremental Testing**: After every coding session, test the endpoint before moving on.
-
-**Single Responsibility**: Each agent, node, service, and function does exactly one thing.
-
----
-
-## 4. Core Technology Stack
-
-### Main Stack (Days 1–2)
-
-| Technology | Role | Why This Tool |
-|-----------|------|---------------|
-| **Python 3.11+** | Primary language | Best AI/ML ecosystem; async support; huge library support |
-| **FastAPI** | API framework | Fastest Python web framework; auto docs; async-native; Pydantic validation |
-| **n8n** | Workflow automation | No-code/low-code automation; visual editor; 350+ integrations; self-hostable |
-
----
-
-### Extended Stack (Days 3–4)
-
-| Technology | Role | Why This Tool |
-|-----------|------|---------------|
-| **LangGraph** | Workflow orchestration | Stateful graph execution; retry logic; conditional routing; checkpointing |
-| **CrewAI** | Multi-agent framework | Role-based agents; task delegation; autonomous collaboration |
-| **OpenAI API** | LLM backbone | GPT-4o for reasoning, planning, and generation |
-| **Chroma / FAISS** | Vector database | Local, zero-config embedding storage for RAG |
-| **PostgreSQL** | Persistent storage | Store reports, queries, job history |
-| **SQLite** | Lightweight local DB | Fast local development without Postgres setup |
-
----
-
-### How They Interact
-
-```
-[User Query]
-     │
-     ▼
-[FastAPI] ──────────────────────────────────────────────────────┐
-     │                                                           │
-     ▼                                                           │
-[LangGraph StateGraph]                                          │
-  ├── Planner Node                                              │
-  ├── Research Node ──── [Web Search Tool]                      │
-  ├── RAG Node ─────────── [Vector DB / Chroma]                 │
-  ├── Analysis Node                                             │
-  └── Report Node ──── [CrewAI Crew]                           │
-       ├── Planner Agent                                        │
-       ├── Research Agent                                       │
-       ├── Writer Agent                                         │
-       └── Reviewer Agent                                       │
-                 │                                              │
-                 ▼                                              │
-         [Final Report MD/PDF]                                  │
-                 │                                              │
-                 ▼                                              │
-         [n8n Webhook] ◄──────────────────────────────────────┘
-           ├── Save to disk
-           ├── Send email notification
-           └── Trigger downstream automation
+ai-research-system/
+│
+├── app/
+│   ├── __init__.py
+│   ├── main.py                        # FastAPI app entry point
+│   │
+│   ├── routers/
+│   │   ├── __init__.py
+│   │   ├── research.py                # Research job endpoints
+│   │   └── reports.py                 # Report download endpoints
+│   │
+│   ├── schemas/
+│   │   ├── __init__.py
+│   │   ├── research.py                # Request/Response Pydantic models
+│   │   └── job.py                     # Job status models
+│   │
+│   ├── services/
+│   │   ├── __init__.py
+│   │   ├── search_service.py          # Tavily web search
+│   │   ├── report_service.py          # Report generation + saving
+│   │   ├── notification_service.py    # Replaces n8n — logging + alerts
+│   │   └── job_service.py             # SQLite job tracking
+│   │
+│   ├── state/
+│   │   ├── __init__.py
+│   │   └── research_state.py          # LangGraph TypedDict state
+│   │
+│   ├── graphs/
+│   │   ├── __init__.py
+│   │   ├── research_graph.py          # LangGraph StateGraph assembly
+│   │   └── nodes/
+│   │       ├── __init__.py
+│   │       ├── planner.py             # Node: query decomposition
+│   │       ├── researcher.py          # Node: web search execution
+│   │       ├── analyzer.py            # Node: findings extraction
+│   │       └── reporter.py            # Node: calls CrewAI crew
+│   │
+│   ├── agents/
+│   │   ├── __init__.py
+│   │   ├── planner_agent.py           # CrewAI: Research Strategist
+│   │   ├── research_agent.py          # CrewAI: Senior Research Analyst
+│   │   ├── writer_agent.py            # CrewAI: Principal Report Writer
+│   │   └── reviewer_agent.py          # CrewAI: QA Director
+│   │
+│   ├── crews/
+│   │   ├── __init__.py
+│   │   └── research_crew.py           # CrewAI Crew assembly + execution
+│   │
+│   ├── tasks/
+│   │   ├── __init__.py
+│   │   └── research_tasks.py          # CrewAI Task definitions
+│   │
+│   └── utils/
+│       ├── __init__.py
+│       ├── file_utils.py              # File path helpers
+│       ├── text_utils.py              # Text truncation, cleaning
+│       └── logger.py                  # Colored terminal logger
+│
+├── reports/                           # Generated markdown reports
+├── data/                              # Raw research data (optional cache)
+├── memory/                            # LangGraph checkpoints
+├── logs/                              # Application logs
+├── jobs_log.json                      # Append-only event log (replaces n8n log)
+├── research.db                        # SQLite job tracking database
+│
+├── .env                               # API keys and config
+├── requirements.txt                   # All dependencies
+└── README.md
 ```
 
 ---
 
-## 5. Phase-Wise Development Plan
+## 4. Environment Setup
 
-### Phase 1 — Foundation (Day 1)
-**Objective**: Working API + n8n connection  
-**Output**: POST `/research` endpoint triggers n8n webhook  
-**What works**: API receives a query, sends it to n8n, n8n logs it
-
-### Phase 2 — Research Pipeline (Day 2)
-**Objective**: Real research + report generation  
-**Output**: Markdown report saved to disk  
-**What works**: API runs a web search, extracts content, generates a markdown report
-
-### Phase 3 — Orchestration (Day 3)
-**Objective**: Stateful workflow with LangGraph  
-**Output**: Multi-step autonomous workflow with state management  
-**What works**: Conditional routing, retry logic, workflow memory, structured state
-
-### Phase 4 — Multi-Agent System (Day 4)
-**Objective**: CrewAI agents collaborate on research and writing  
-**Output**: Full autonomous pipeline — query to PDF to n8n notification  
-**What works**: Complete end-to-end agentic system
-
----
-
-## 6. Day-Wise Implementation Plan (4 Days)
-
----
-
-## DAY 1 — Foundation: FastAPI + n8n Setup
-
-### Objectives
-- Set up Python project structure
-- Create working FastAPI server
-- Install and configure n8n locally
-- Build a webhook-triggered workflow
-- Test with Postman
-
----
-
-### Step 1: Python Environment Setup
+### Step 1: System Requirements
 
 ```bash
-# Create project directory
+# Check Python version (needs 3.11+)
+python --version
+
+# Check Node.js (NOT needed anymore — no n8n!)
+# You only need Python now
+```
+
+### Step 2: Create Project
+
+```bash
 mkdir ai-research-system
 cd ai-research-system
 
 # Create virtual environment
 python -m venv venv
 
-# Activate (Mac/Linux)
-source venv/bin/activate
-
-# Activate (Windows)
-venv\Scripts\activate
-
-# Verify Python version (needs 3.11+)
-python --version
+# Activate
+source venv/bin/activate        # Mac/Linux
+# venv\Scripts\activate         # Windows
 ```
 
----
-
-### Step 2: Install Core Dependencies
-
-```bash
-pip install fastapi uvicorn python-dotenv httpx pydantic openai requests
-```
+### Step 3: Install All Dependencies
 
 Create `requirements.txt`:
 
 ```txt
+# API Framework
 fastapi==0.111.0
 uvicorn==0.30.1
 python-dotenv==1.0.1
-httpx==0.27.0
 pydantic==2.7.1
-openai==1.35.0
+
+# HTTP
+httpx==0.27.0
 requests==2.32.3
+
+# LLM + AI
+openai==1.35.0
+langchain==0.2.5
+langchain-openai==0.1.9
+langchain-community==0.2.5
+langchain-core==0.2.9
+
+# Orchestration
+langgraph==0.1.19
+
+# Multi-Agent
+crewai==0.36.0
+crewai-tools==0.4.6
+
+# Search
+tavily-python==0.3.3
+
+# File handling
+aiofiles==23.2.1
+pypdf2==3.0.1
+
+# Database (job tracking)
+aiosqlite==0.20.0
+
+# Vector DB (RAG - Phase 3)
+chromadb==0.5.0
+
+# Utilities
+python-multipart==0.0.9
+rich==13.7.1
 ```
 
----
+Install:
 
-### Step 3: Project Structure (Day 1)
-
-```
-ai-research-system/
-├── app/
-│   ├── __init__.py
-│   ├── main.py              # FastAPI app entry point
-│   ├── routers/
-│   │   ├── __init__.py
-│   │   └── research.py      # Research endpoints
-│   ├── schemas/
-│   │   ├── __init__.py
-│   │   └── research.py      # Pydantic models
-│   └── services/
-│       ├── __init__.py
-│       └── n8n_service.py   # n8n webhook caller
-├── .env
-├── requirements.txt
-└── README.md
-```
-
-Create all directories:
 ```bash
-mkdir -p app/routers app/schemas app/services
-touch app/__init__.py app/routers/__init__.py app/schemas/__init__.py app/services/__init__.py
+pip install -r requirements.txt
 ```
 
----
-
-### Step 4: Environment Variables
-
-Create `.env`:
+### Step 4: Create .env
 
 ```env
-OPENAI_API_KEY=sk-your-key-here
-N8N_WEBHOOK_URL=http://localhost:5678/webhook/research
+# LLM
+OPENAI_API_KEY=sk-your-openai-key-here
+
+# Search
+TAVILY_API_KEY=tvly-your-tavily-key-here
+SERPER_API_KEY=your-serper-key-here
+
+# App Config
 APP_ENV=development
 LOG_LEVEL=debug
+MAX_RETRY_COUNT=2
+MAX_SEARCH_RESULTS=5
+
+# Optional Email Notification
+EMAIL_SENDER=you@gmail.com
+EMAIL_PASSWORD=your-app-password
+EMAIL_RECEIVER=you@gmail.com
+```
+
+### Step 5: Create Folder Structure
+
+```bash
+mkdir -p app/routers app/schemas app/services app/state \
+         app/graphs/nodes app/agents app/crews app/tasks app/utils \
+         reports data memory logs
+
+touch app/__init__.py \
+      app/routers/__init__.py \
+      app/schemas/__init__.py \
+      app/services/__init__.py \
+      app/state/__init__.py \
+      app/graphs/__init__.py \
+      app/graphs/nodes/__init__.py \
+      app/agents/__init__.py \
+      app/crews/__init__.py \
+      app/tasks/__init__.py \
+      app/utils/__init__.py
 ```
 
 ---
 
-### Step 5: Pydantic Schemas
+## 5. Day 1 — FastAPI Foundation + Notification Service
+
+### Objectives
+- Working FastAPI server
+- Pydantic schemas defined
+- SQLite job tracker set up
+- `NotificationService` replacing n8n
+- Colored terminal logger
+- Test with Postman/curl
+
+---
+
+### File 1: Colored Logger
+
+`app/utils/logger.py`:
+
+```python
+import logging
+from rich.logging import RichHandler
+from rich.console import Console
+
+console = Console()
+
+def get_logger(name: str) -> logging.Logger:
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format="%(message)s",
+        handlers=[RichHandler(console=console, rich_tracebacks=True)]
+    )
+    return logging.getLogger(name)
+```
+
+---
+
+### File 2: Pydantic Schemas
 
 `app/schemas/research.py`:
 
 ```python
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
 
 
 class ResearchRequest(BaseModel):
-    query: str
-    depth: Optional[str] = "standard"  # "quick" | "standard" | "deep"
-    format: Optional[str] = "markdown"  # "markdown" | "pdf"
+    query: str = Field(..., min_length=10, description="Research query")
+    depth: Optional[str] = Field("standard", description="quick | standard | deep")
+    format: Optional[str] = Field("markdown", description="markdown | pdf")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "query": "Generate AI semiconductor market research for NVIDIA and AMD",
+                "depth": "standard",
+                "format": "markdown"
+            }
+        }
 
 
 class ResearchResponse(BaseModel):
@@ -451,853 +338,290 @@ class ResearchResponse(BaseModel):
     created_at: datetime
 ```
 
----
-
-### Step 6: n8n Service
-
-`app/services/n8n_service.py`:
+`app/schemas/job.py`:
 
 ```python
-import httpx
-import os
+from pydantic import BaseModel
+from typing import Optional
 from datetime import datetime
 
 
-async def trigger_n8n_webhook(payload: dict) -> dict:
-    """Send data to n8n webhook and return response."""
-    webhook_url = os.getenv("N8N_WEBHOOK_URL")
+class JobStatus(BaseModel):
+    job_id: str
+    status: str                    # queued | processing | complete | failed
+    query: str
+    depth: str
+    report_path: Optional[str] = None
+    sources_count: Optional[int] = None
+    error: Optional[str] = None
+    created_at: datetime
+    completed_at: Optional[datetime] = None
+    duration_seconds: Optional[float] = None
+```
 
-    async with httpx.AsyncClient() as client:
-        try:
-            response = await client.post(
-                webhook_url,
-                json=payload,
-                timeout=30.0
+---
+
+### File 3: Job Service (SQLite)
+
+`app/services/job_service.py`:
+
+```python
+import aiosqlite
+import json
+from datetime import datetime
+from typing import Optional
+from app.utils.logger import get_logger
+
+logger = get_logger(__name__)
+DB_PATH = "research.db"
+
+
+async def init_db():
+    """Create jobs table if it doesn't exist."""
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS jobs (
+                job_id TEXT PRIMARY KEY,
+                status TEXT NOT NULL,
+                query TEXT NOT NULL,
+                depth TEXT DEFAULT 'standard',
+                report_path TEXT,
+                sources_count INTEGER DEFAULT 0,
+                error TEXT,
+                created_at TEXT NOT NULL,
+                completed_at TEXT,
+                duration_seconds REAL
             )
-            response.raise_for_status()
-            return {"success": True, "status_code": response.status_code}
-        except httpx.RequestError as e:
-            return {"success": False, "error": str(e)}
+        """)
+        await db.commit()
+    logger.info("Database initialized.")
 
 
-def build_research_payload(job_id: str, query: str, depth: str) -> dict:
-    """Build the payload to send to n8n."""
+async def create_job(job_id: str, query: str, depth: str):
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            """INSERT INTO jobs (job_id, status, query, depth, created_at)
+               VALUES (?, ?, ?, ?, ?)""",
+            (job_id, "queued", query, depth, datetime.utcnow().isoformat())
+        )
+        await db.commit()
+
+
+async def update_job(job_id: str, **kwargs):
+    """Dynamically update any job fields."""
+    if not kwargs:
+        return
+    fields = ", ".join(f"{k} = ?" for k in kwargs)
+    values = list(kwargs.values()) + [job_id]
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(f"UPDATE jobs SET {fields} WHERE job_id = ?", values)
+        await db.commit()
+
+
+async def get_job(job_id: str) -> Optional[dict]:
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT * FROM jobs WHERE job_id = ?", (job_id,)) as cursor:
+            row = await cursor.fetchone()
+            return dict(row) if row else None
+
+
+async def get_all_jobs(limit: int = 20) -> list[dict]:
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute(
+            "SELECT * FROM jobs ORDER BY created_at DESC LIMIT ?", (limit,)
+        ) as cursor:
+            rows = await cursor.fetchall()
+            return [dict(r) for r in rows]
+```
+
+---
+
+### File 4: Notification Service (Replaces n8n)
+
+`app/services/notification_service.py`:
+
+```python
+import json
+import aiofiles
+from datetime import datetime
+from rich.console import Console
+from rich.panel import Panel
+from app.utils.logger import get_logger
+
+logger = get_logger(__name__)
+console = Console()
+LOG_FILE = "jobs_log.json"
+
+
+class NotificationService:
+    """
+    Handles all event notifications without n8n.
+    Logs to file + rich terminal output.
+    Optionally sends email (configure in .env).
+    """
+
+    async def job_started(self, job_id: str, query: str, depth: str):
+        console.print(Panel(
+            f"[bold cyan]🚀 Research Job Started[/bold cyan]\n"
+            f"[white]Job ID:[/white] {job_id}\n"
+            f"[white]Query:[/white] {query[:80]}\n"
+            f"[white]Depth:[/white] {depth}",
+            title="[bold]AI Research System[/bold]",
+            border_style="cyan"
+        ))
+        await self._log_event("job_started", job_id, query=query, depth=depth)
+
+    async def job_complete(self, job_id: str, query: str,
+                           report_path: str, sources_count: int, duration: float):
+        console.print(Panel(
+            f"[bold green]✅ Report Generated Successfully[/bold green]\n"
+            f"[white]Job ID:[/white] {job_id}\n"
+            f"[white]Query:[/white] {query[:80]}\n"
+            f"[white]Report:[/white] [link]{report_path}[/link]\n"
+            f"[white]Sources:[/white] {sources_count}\n"
+            f"[white]Duration:[/white] {duration:.1f}s",
+            title="[bold]Research Complete[/bold]",
+            border_style="green"
+        ))
+        await self._log_event("job_complete", job_id,
+                              query=query, report_path=report_path,
+                              sources_count=sources_count, duration=duration)
+
+    async def job_failed(self, job_id: str, query: str, error: str):
+        console.print(Panel(
+            f"[bold red]❌ Research Job Failed[/bold red]\n"
+            f"[white]Job ID:[/white] {job_id}\n"
+            f"[white]Query:[/white] {query[:80]}\n"
+            f"[white]Error:[/white] {error}",
+            title="[bold]Job Failed[/bold]",
+            border_style="red"
+        ))
+        await self._log_event("job_failed", job_id, query=query, error=error)
+
+    async def step_update(self, job_id: str, step: str, message: str):
+        console.print(f"  [dim]→[/dim] [yellow]{step}[/yellow]: {message}")
+        await self._log_event("step_update", job_id, step=step, message=message)
+
+    async def _log_event(self, event: str, job_id: str, **kwargs):
+        entry = {
+            "event": event,
+            "job_id": job_id,
+            "timestamp": datetime.utcnow().isoformat(),
+            **kwargs
+        }
+        async with aiofiles.open(LOG_FILE, "a") as f:
+            await f.write(json.dumps(entry) + "\n")
+
+
+# Optional Email Notification (uncomment to enable)
+# import smtplib
+# from email.message import EmailMessage
+# import os
+#
+# async def send_email_notification(subject: str, body: str):
+#     msg = EmailMessage()
+#     msg["Subject"] = subject
+#     msg["From"] = os.getenv("EMAIL_SENDER")
+#     msg["To"] = os.getenv("EMAIL_RECEIVER")
+#     msg.set_content(body)
+#     with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
+#         smtp.login(os.getenv("EMAIL_SENDER"), os.getenv("EMAIL_PASSWORD"))
+#         smtp.send_message(msg)
+```
+
+---
+
+### File 5: FastAPI Main App
+
+`app/main.py`:
+
+```python
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
+from dotenv import load_dotenv
+
+from app.routers import research, reports
+from app.services.job_service import init_db
+from app.utils.logger import get_logger, console
+from rich.panel import Panel
+
+load_dotenv()
+logger = get_logger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    await init_db()
+    console.print(Panel(
+        "[bold green]Autonomous AI Research System[/bold green]\n"
+        "[white]API Docs:[/white] http://localhost:8000/docs\n"
+        "[white]Status:[/white] Running",
+        border_style="green"
+    ))
+    yield
+    # Shutdown
+    logger.info("Shutting down.")
+
+
+app = FastAPI(
+    title="Autonomous AI Research System",
+    description="Multi-agent AI research and report generation — no n8n required.",
+    version="2.0.0",
+    lifespan=lifespan
+)
+
+app.include_router(research.router)
+app.include_router(reports.router)
+
+
+@app.get("/")
+async def root():
     return {
-        "job_id": job_id,
-        "query": query,
-        "depth": depth,
-        "timestamp": datetime.utcnow().isoformat(),
-        "source": "ai-research-system"
+        "system": "Autonomous AI Research System",
+        "version": "2.0.0",
+        "docs": "/docs",
+        "status": "running"
     }
 ```
 
 ---
 
-### Step 7: Research Router
+### File 6: Research Router
 
 `app/routers/research.py`:
 
 ```python
 import uuid
-from fastapi import APIRouter
+from fastapi import APIRouter, BackgroundTasks, HTTPException
 from datetime import datetime
 
 from app.schemas.research import ResearchRequest, ResearchResponse
-from app.services.n8n_service import trigger_n8n_webhook, build_research_payload
+from app.schemas.job import JobStatus
+from app.services.job_service import create_job, get_job, get_all_jobs
+from app.services.notification_service import NotificationService
+from app.utils.logger import get_logger
 
+logger = get_logger(__name__)
 router = APIRouter(prefix="/research", tags=["Research"])
+notifier = NotificationService()
 
 
-@router.post("/", response_model=ResearchResponse)
-async def create_research_job(request: ResearchRequest):
-    """Accept a research query and trigger the n8n workflow."""
-    job_id = str(uuid.uuid4())
+async def run_pipeline(job_id: str, query: str, depth: str):
+    """Entry point for background pipeline execution."""
+    from app.graphs.research_graph import research_graph
+    from app.services.job_service import update_job
 
-    # Build and send payload to n8n
-    payload = build_research_payload(job_id, request.query, request.depth)
-    await trigger_n8n_webhook(payload)
-
-    return ResearchResponse(
-        job_id=job_id,
-        status="queued",
-        message="Research job created and workflow triggered.",
-        query=request.query,
-        created_at=datetime.utcnow()
-    )
-
-
-@router.get("/health")
-async def health_check():
-    return {"status": "ok", "service": "research-api"}
-```
-
----
-
-### Step 8: FastAPI Main App
-
-`app/main.py`:
-
-```python
-from fastapi import FastAPI
-from dotenv import load_dotenv
-
-from app.routers import research
-
-load_dotenv()
-
-app = FastAPI(
-    title="Autonomous AI Research System",
-    description="AI-powered research and report generation API",
-    version="0.1.0"
-)
-
-app.include_router(research.router)
-
-
-@app.get("/")
-async def root():
-    return {"message": "Autonomous AI Research System is running."}
-```
-
----
-
-### Step 9: Run the Server
-
-```bash
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-```
-
-Visit: `http://localhost:8000/docs` — your interactive Swagger UI is live.
-
----
-
-### Step 10: Install and Start n8n
-
-```bash
-# Install n8n globally
-npm install -g n8n
-
-# Start n8n
-n8n start
-```
-
-Visit: `http://localhost:5678`
-
-**Create a Webhook Workflow in n8n:**
-
-1. New Workflow → Add Node → Webhook
-2. Set method: POST, path: `/research`
-3. Add a "Set" node to log data
-4. Activate the workflow
-5. Copy the webhook URL → paste into your `.env`
-
----
-
-### Step 11: Testing with Postman
-
-```
-POST http://localhost:8000/research/
-Content-Type: application/json
-
-{
-  "query": "Generate AI semiconductor market research for NVIDIA and AMD",
-  "depth": "standard",
-  "format": "markdown"
-}
-```
-
-**Expected Response:**
-```json
-{
-  "job_id": "abc123-...",
-  "status": "queued",
-  "message": "Research job created and workflow triggered.",
-  "query": "Generate AI semiconductor market research for NVIDIA and AMD",
-  "created_at": "2024-01-15T10:30:00"
-}
-```
-
-**Day 1 Success Criteria:**
-- FastAPI server runs without errors
-- `/docs` page loads
-- POST request returns a job ID
-- n8n webhook receives the payload (check n8n execution log)
-
----
-
-## DAY 2 — Research Pipeline & Report Generation
-
-### Objectives
-- Build a real web search integration
-- Create document processing service
-- Generate structured markdown reports
-- Save reports to local filesystem
-- Connect research pipeline to FastAPI
-
----
-
-### New Dependencies
-
-```bash
-pip install langchain langchain-openai langchain-community \
-            tavily-python pypdf2 markdown beautifulsoup4 \
-            aiofiles python-multipart
-```
-
-Update `requirements.txt` accordingly.
-
----
-
-### New Folder Structure (Day 2 additions)
-
-```
-ai-research-system/
-├── app/
-│   ├── routers/
-│   │   └── research.py          # Updated
-│   ├── schemas/
-│   │   └── research.py          # Updated
-│   ├── services/
-│   │   ├── n8n_service.py
-│   │   ├── research_service.py  # NEW
-│   │   ├── search_service.py    # NEW
-│   │   └── report_service.py    # NEW
-│   └── utils/
-│       ├── __init__.py
-│       ├── file_utils.py        # NEW
-│       └── text_utils.py        # NEW
-├── reports/                     # NEW - saved reports
-├── data/                        # NEW - raw research data
-└── .env
-```
-
----
-
-### Step 1: Search Service
-
-`app/services/search_service.py`:
-
-```python
-import os
-from tavily import TavilyClient
-
-
-class SearchService:
-    def __init__(self):
-        self.client = TavilyClient(api_key=os.getenv("TAVILY_API_KEY"))
-
-    async def search(self, query: str, max_results: int = 5) -> list[dict]:
-        """Search the web and return structured results."""
-        response = self.client.search(
-            query=query,
-            search_depth="advanced",
-            max_results=max_results,
-            include_answer=True
-        )
-
-        results = []
-        for r in response.get("results", []):
-            results.append({
-                "title": r.get("title"),
-                "url": r.get("url"),
-                "content": r.get("content"),
-                "score": r.get("score", 0)
-            })
-
-        return results
-
-    async def search_multiple(self, queries: list[str]) -> list[dict]:
-        """Run multiple searches and aggregate results."""
-        all_results = []
-        for q in queries:
-            results = await self.search(q)
-            all_results.extend(results)
-        return all_results
-```
-
-> **Note**: Get a free Tavily API key at `tavily.com`. Add `TAVILY_API_KEY=your-key` to `.env`.
-
----
-
-### Step 2: Report Service
-
-`app/services/report_service.py`:
-
-```python
-import os
-import aiofiles
-from datetime import datetime
-from openai import AsyncOpenAI
-
-
-class ReportService:
-    def __init__(self):
-        self.client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
-    async def generate_report(self, query: str, research_data: list[dict]) -> str:
-        """Generate a structured markdown report from research data."""
-
-        # Compile research context
-        context = self._compile_context(research_data)
-
-        prompt = f"""You are a professional research analyst.
-
-Based on the following research data, write a comprehensive, well-structured market research report.
-
-RESEARCH QUERY: {query}
-
-RESEARCH DATA:
-{context}
-
-Generate a report with the following structure:
-# [Report Title]
-
-## Executive Summary
-## Key Findings
-## Market Analysis
-## Competitive Landscape
-## Data & Statistics
-## Conclusions & Recommendations
-## Sources
-
-Use professional language. Include specific data points where available.
-Format in clean Markdown."""
-
-        response = await self.client.chat.completions.create(
-            model="gpt-4o",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.3,
-            max_tokens=4000
-        )
-
-        return response.choices[0].message.content
-
-    def _compile_context(self, results: list[dict]) -> str:
-        """Compile search results into a readable context string."""
-        context_parts = []
-        for i, r in enumerate(results[:8], 1):  # Limit to 8 sources
-            context_parts.append(
-                f"[Source {i}] {r['title']}\nURL: {r['url']}\n{r['content'][:1500]}\n"
-            )
-        return "\n---\n".join(context_parts)
-
-    async def save_report(self, report: str, job_id: str) -> str:
-        """Save report to disk and return file path."""
-        os.makedirs("reports", exist_ok=True)
-        timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
-        filename = f"reports/report_{job_id[:8]}_{timestamp}.md"
-
-        async with aiofiles.open(filename, "w") as f:
-            await f.write(report)
-
-        return filename
-```
-
----
-
-### Step 3: Research Service (Orchestrator)
-
-`app/services/research_service.py`:
-
-```python
-from app.services.search_service import SearchService
-from app.services.report_service import ReportService
-from app.services.n8n_service import trigger_n8n_webhook
-
-
-class ResearchService:
-    def __init__(self):
-        self.search = SearchService()
-        self.report = ReportService()
-
-    async def run(self, job_id: str, query: str, depth: str = "standard") -> dict:
-        """Full research pipeline: search → analyze → report → notify."""
-
-        # 1. Determine search queries based on depth
-        queries = self._plan_queries(query, depth)
-
-        # 2. Execute searches
-        raw_results = await self.search.search_multiple(queries)
-
-        # 3. Generate report
-        report_content = await self.report.generate_report(query, raw_results)
-
-        # 4. Save to disk
-        file_path = await self.report.save_report(report_content, job_id)
-
-        # 5. Notify n8n
-        await trigger_n8n_webhook({
-            "event": "report_complete",
-            "job_id": job_id,
-            "file_path": file_path,
-            "query": query,
-            "sources_count": len(raw_results)
-        })
-
-        return {
-            "job_id": job_id,
-            "status": "complete",
-            "file_path": file_path,
-            "sources": len(raw_results)
-        }
-
-    def _plan_queries(self, query: str, depth: str) -> list[str]:
-        """Generate multiple search queries from the main query."""
-        base_queries = [query]
-        if depth in ["standard", "deep"]:
-            base_queries.append(f"{query} market size statistics 2024")
-            base_queries.append(f"{query} recent news analysis")
-        if depth == "deep":
-            base_queries.append(f"{query} competitive comparison")
-            base_queries.append(f"{query} future trends forecast")
-        return base_queries
-```
-
----
-
-### Step 4: Update Router for Background Execution
-
-`app/routers/research.py` (updated):
-
-```python
-import uuid
-from fastapi import APIRouter, BackgroundTasks
-from datetime import datetime
-
-from app.schemas.research import ResearchRequest, ResearchResponse
-from app.services.research_service import ResearchService
-
-router = APIRouter(prefix="/research", tags=["Research"])
-service = ResearchService()
-
-
-@router.post("/", response_model=ResearchResponse)
-async def create_research_job(
-    request: ResearchRequest,
-    background_tasks: BackgroundTasks
-):
-    job_id = str(uuid.uuid4())
-
-    # Run research pipeline in background (non-blocking)
-    background_tasks.add_task(
-        service.run, job_id, request.query, request.depth
-    )
-
-    return ResearchResponse(
-        job_id=job_id,
-        status="processing",
-        message="Research pipeline started. Report will be ready shortly.",
-        query=request.query,
-        created_at=datetime.utcnow()
-    )
-```
-
-**Day 2 Success Criteria:**
-- POST request starts background research
-- Web search results are retrieved
-- Markdown report is generated and saved in `/reports/`
-- n8n receives a `report_complete` event with file path
-
----
-
-## DAY 3 — LangGraph Orchestration & State Management
-
-### Objectives
-- Replace the linear research service with a LangGraph state graph
-- Implement conditional routing (success/failure/retry)
-- Add state persistence with checkpointing
-- Build autonomous task planning within the graph
-
----
-
-### New Dependencies
-
-```bash
-pip install langgraph langchain-core
-```
-
----
-
-### New Folder Structure (Day 3 additions)
-
-```
-ai-research-system/
-├── app/
-│   ├── graphs/               # NEW
-│   │   ├── __init__.py
-│   │   ├── research_graph.py # NEW - LangGraph state machine
-│   │   └── nodes/            # NEW
-│   │       ├── __init__.py
-│   │       ├── planner.py
-│   │       ├── researcher.py
-│   │       ├── analyzer.py
-│   │       └── reporter.py
-│   ├── state/                # NEW
-│   │   ├── __init__.py
-│   │   └── research_state.py # NEW - TypedDict state definition
-```
-
----
-
-### Step 1: Define the State
-
-`app/state/research_state.py`:
-
-```python
-from typing import TypedDict, Optional, List, Annotated
-import operator
-
-
-class ResearchState(TypedDict):
-    # Input
-    job_id: str
-    query: str
-    depth: str
-
-    # Planning
-    sub_queries: List[str]
-    plan: str
-
-    # Research
-    raw_results: List[dict]
-    sources_count: int
-
-    # Analysis
-    key_findings: str
-    analysis_complete: bool
-
-    # Report
-    report_content: str
-    report_file_path: str
-
-    # Control flow
-    current_step: str
-    retry_count: int
-    error: Optional[str]
-    status: str
-
-    # Metadata
-    messages: Annotated[List[str], operator.add]  # Append-only log
-```
-
----
-
-### Step 2: Planner Node
-
-`app/graphs/nodes/planner.py`:
-
-```python
-import os
-from openai import AsyncOpenAI
-from app.state.research_state import ResearchState
-
-client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
-
-async def planner_node(state: ResearchState) -> ResearchState:
-    """Break the research query into structured sub-queries."""
-
-    prompt = f"""You are a research planner.
-Break the following research query into 3-5 specific, targeted search queries.
-
-QUERY: {state["query"]}
-
-Return ONLY a JSON array of search strings. Example:
-["query 1", "query 2", "query 3"]"""
-
-    response = await client.chat.completions.create(
-        model="gpt-4o",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.2,
-        response_format={"type": "json_object"}
-    )
-
-    import json
-    result = json.loads(response.choices[0].message.content)
-    sub_queries = result.get("queries", [state["query"]])
-
-    return {
-        **state,
-        "sub_queries": sub_queries,
-        "plan": f"Generated {len(sub_queries)} search queries",
-        "current_step": "planned",
-        "messages": [f"Planner: Generated {len(sub_queries)} queries"]
-    }
-```
-
----
-
-### Step 3: Researcher Node
-
-`app/graphs/nodes/researcher.py`:
-
-```python
-from app.state.research_state import ResearchState
-from app.services.search_service import SearchService
-
-search_service = SearchService()
-
-
-async def researcher_node(state: ResearchState) -> ResearchState:
-    """Execute web searches for all sub-queries."""
-
-    all_results = []
-    for query in state["sub_queries"]:
-        results = await search_service.search(query, max_results=3)
-        all_results.extend(results)
-
-    # Deduplicate by URL
-    seen_urls = set()
-    unique_results = []
-    for r in all_results:
-        if r["url"] not in seen_urls:
-            seen_urls.add(r["url"])
-            unique_results.append(r)
-
-    return {
-        **state,
-        "raw_results": unique_results,
-        "sources_count": len(unique_results),
-        "current_step": "researched",
-        "messages": [f"Researcher: Found {len(unique_results)} unique sources"]
-    }
-```
-
----
-
-### Step 4: Analyzer Node
-
-`app/graphs/nodes/analyzer.py`:
-
-```python
-import os
-from openai import AsyncOpenAI
-from app.state.research_state import ResearchState
-
-client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
-
-async def analyzer_node(state: ResearchState) -> ResearchState:
-    """Analyze raw research results and extract key findings."""
-
-    context = "\n\n".join([
-        f"Source: {r['title']}\n{r['content'][:1000]}"
-        for r in state["raw_results"][:6]
-    ])
-
-    prompt = f"""Analyze the following research data about: {state['query']}
-
-DATA:
-{context}
-
-Extract:
-1. Top 5 key findings
-2. Important statistics and data points
-3. Main themes and patterns
-4. Gaps or contradictions in the data
-
-Be specific and factual."""
-
-    response = await client.chat.completions.create(
-        model="gpt-4o",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.2,
-        max_tokens=2000
-    )
-
-    return {
-        **state,
-        "key_findings": response.choices[0].message.content,
-        "analysis_complete": True,
-        "current_step": "analyzed",
-        "messages": ["Analyzer: Key findings extracted"]
-    }
-```
-
----
-
-### Step 5: Reporter Node
-
-`app/graphs/nodes/reporter.py`:
-
-```python
-import os
-import aiofiles
-from datetime import datetime
-from openai import AsyncOpenAI
-from app.state.research_state import ResearchState
-
-client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
-
-async def reporter_node(state: ResearchState) -> ResearchState:
-    """Generate the final structured report."""
-
-    prompt = f"""You are a professional report writer.
-
-QUERY: {state['query']}
-
-KEY FINDINGS:
-{state['key_findings']}
-
-RAW SOURCES SUMMARY:
-{chr(10).join([f"- {r['title']}: {r['content'][:300]}" for r in state['raw_results'][:5]])}
-
-Write a comprehensive, professional market research report in Markdown format.
-Include: Executive Summary, Key Findings, Analysis, Recommendations, Sources."""
-
-    response = await client.chat.completions.create(
-        model="gpt-4o",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.3,
-        max_tokens=4000
-    )
-
-    report_content = response.choices[0].message.content
-
-    # Save report
-    os.makedirs("reports", exist_ok=True)
-    timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
-    file_path = f"reports/report_{state['job_id'][:8]}_{timestamp}.md"
-
-    async with aiofiles.open(file_path, "w") as f:
-        await f.write(report_content)
-
-    return {
-        **state,
-        "report_content": report_content,
-        "report_file_path": file_path,
-        "current_step": "reported",
-        "status": "complete",
-        "messages": [f"Reporter: Report saved to {file_path}"]
-    }
-```
-
----
-
-### Step 6: Build the State Graph
-
-`app/graphs/research_graph.py`:
-
-```python
-from langgraph.graph import StateGraph, END
-from langgraph.checkpoint.memory import MemorySaver
-
-from app.state.research_state import ResearchState
-from app.graphs.nodes.planner import planner_node
-from app.graphs.nodes.researcher import researcher_node
-from app.graphs.nodes.analyzer import analyzer_node
-from app.graphs.nodes.reporter import reporter_node
-
-
-def should_retry(state: ResearchState) -> str:
-    """Conditional edge: retry if insufficient sources found."""
-    if state.get("sources_count", 0) < 2:
-        if state.get("retry_count", 0) < 2:
-            return "retry"
-        return "reporter"  # Proceed despite low sources
-    return "analyzer"
-
-
-def build_research_graph():
-    """Build and compile the research LangGraph workflow."""
-
-    # Initialize graph with state schema
-    graph = StateGraph(ResearchState)
-
-    # Add nodes
-    graph.add_node("planner", planner_node)
-    graph.add_node("researcher", researcher_node)
-    graph.add_node("analyzer", analyzer_node)
-    graph.add_node("reporter", reporter_node)
-
-    # Define edges
-    graph.set_entry_point("planner")
-    graph.add_edge("planner", "researcher")
-
-    # Conditional routing after research
-    graph.add_conditional_edges(
-        "researcher",
-        should_retry,
-        {
-            "analyzer": "analyzer",
-            "retry": "researcher",  # Retry search
-            "reporter": "reporter"  # Skip analysis if retries exhausted
-        }
-    )
-
-    graph.add_edge("analyzer", "reporter")
-    graph.add_edge("reporter", END)
-
-    # Add memory checkpointing
-    memory = MemorySaver()
-    return graph.compile(checkpointer=memory)
-
-
-# Singleton graph instance
-research_graph = build_research_graph()
-```
-
----
-
-### Step 7: LangGraph Execution Flow Diagram
-
-```
-[START]
-   │
-   ▼
-[PLANNER NODE]
-  - Receives: query, depth
-  - Does: Break query into sub-queries using GPT-4o
-  - Outputs: sub_queries[], plan
-   │
-   ▼
-[RESEARCHER NODE]
-  - Receives: sub_queries[]
-  - Does: Execute web searches via Tavily
-  - Outputs: raw_results[], sources_count
-   │
-   ▼ (Conditional Edge)
-  ┌─────────────────────────────────┐
-  │  sources_count >= 2?            │
-  │  YES → ANALYZER                 │
-  │  NO + retries < 2 → RESEARCHER  │
-  │  NO + retries >= 2 → REPORTER   │
-  └─────────────────────────────────┘
-   │
-   ▼
-[ANALYZER NODE]
-  - Receives: raw_results[]
-  - Does: Extract key findings via GPT-4o
-  - Outputs: key_findings, analysis_complete
-   │
-   ▼
-[REPORTER NODE]
-  - Receives: key_findings, raw_results
-  - Does: Generate + save markdown report
-  - Outputs: report_content, report_file_path
-   │
-   ▼
-[END]
-```
-
----
-
-### Step 8: Update Router to Use Graph
-
-```python
-# In app/routers/research.py
-
-from app.graphs.research_graph import research_graph
-
-@router.post("/", response_model=ResearchResponse)
-async def create_research_job(request: ResearchRequest, background_tasks: BackgroundTasks):
-    job_id = str(uuid.uuid4())
+    start_time = datetime.utcnow()
+    await notifier.job_started(job_id, query, depth)
+    await update_job(job_id, status="processing")
 
     initial_state = {
         "job_id": job_id,
-        "query": request.query,
-        "depth": request.depth,
+        "query": query,
+        "depth": depth,
         "sub_queries": [],
         "plan": "",
         "raw_results": [],
@@ -1313,111 +637,755 @@ async def create_research_job(request: ResearchRequest, background_tasks: Backgr
         "messages": []
     }
 
-    config = {"configurable": {"thread_id": job_id}}
-    background_tasks.add_task(research_graph.ainvoke, initial_state, config)
+    try:
+        config = {"configurable": {"thread_id": job_id}}
+        final_state = await research_graph.ainvoke(initial_state, config)
+
+        duration = (datetime.utcnow() - start_time).total_seconds()
+
+        await update_job(
+            job_id,
+            status="complete",
+            report_path=final_state.get("report_file_path"),
+            sources_count=final_state.get("sources_count", 0),
+            completed_at=datetime.utcnow().isoformat(),
+            duration_seconds=duration
+        )
+
+        await notifier.job_complete(
+            job_id, query,
+            final_state.get("report_file_path", ""),
+            final_state.get("sources_count", 0),
+            duration
+        )
+
+    except Exception as e:
+        logger.error(f"Pipeline failed for job {job_id}: {e}")
+        await update_job(job_id, status="failed", error=str(e))
+        await notifier.job_failed(job_id, query, str(e))
+
+
+@router.post("/", response_model=ResearchResponse, status_code=202)
+async def create_research_job(
+    request: ResearchRequest,
+    background_tasks: BackgroundTasks
+):
+    """Start a new autonomous research job."""
+    job_id = str(uuid.uuid4())
+
+    await create_job(job_id, request.query, request.depth)
+    background_tasks.add_task(run_pipeline, job_id, request.query, request.depth)
 
     return ResearchResponse(
         job_id=job_id,
-        status="processing",
-        message="LangGraph workflow started.",
+        status="queued",
+        message="Research pipeline started. Poll /research/{job_id} for status.",
         query=request.query,
         created_at=datetime.utcnow()
     )
+
+
+@router.get("/{job_id}", response_model=JobStatus)
+async def get_research_status(job_id: str):
+    """Get current status and result of a research job."""
+    job = await get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return JobStatus(**job, created_at=datetime.fromisoformat(job["created_at"]))
+
+
+@router.get("/", response_model=list[JobStatus])
+async def list_jobs(limit: int = 20):
+    """List recent research jobs."""
+    jobs = await get_all_jobs(limit)
+    return [
+        JobStatus(**j, created_at=datetime.fromisoformat(j["created_at"]))
+        for j in jobs
+    ]
 ```
 
-**Day 3 Success Criteria:**
-- LangGraph graph compiles without errors
-- State flows through all nodes correctly
-- Conditional routing works (retry on low sources)
-- Reports are generated and saved
-- Execution log shows all messages from each node
-
 ---
 
-## DAY 4 — CrewAI Multi-Agent Integration
+### File 7: Reports Router
 
-### Objectives
-- Define specialized AI agents with roles
-- Assign tasks to agents
-- Build a CrewAI crew that replaces/enhances the reporter node
-- Connect the complete pipeline: FastAPI → LangGraph → CrewAI → n8n
+`app/routers/reports.py`:
 
----
+```python
+import os
+from fastapi import APIRouter, HTTPException
+from fastapi.responses import FileResponse
 
-### New Dependencies
+router = APIRouter(prefix="/reports", tags=["Reports"])
+
+
+@router.get("/{filename}")
+async def download_report(filename: str):
+    """Download a generated report by filename."""
+    file_path = f"reports/{filename}"
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Report not found")
+    return FileResponse(
+        path=file_path,
+        media_type="text/markdown",
+        filename=filename
+    )
+
+
+@router.get("/")
+async def list_reports():
+    """List all generated reports."""
+    if not os.path.exists("reports"):
+        return []
+    files = os.listdir("reports")
+    return [{"filename": f, "path": f"reports/{f}"} for f in sorted(files, reverse=True)]
+```
+
+### Run and Test Day 1
 
 ```bash
-pip install crewai crewai-tools
+uvicorn app.main:app --reload --port 8000
+```
+
+Test:
+```bash
+curl -X POST http://localhost:8000/research/ \
+  -H "Content-Type: application/json" \
+  -d '{"query": "NVIDIA and AMD AI chip market analysis 2024", "depth": "standard"}'
+```
+
+**Day 1 Success Criteria:**
+- Server starts with colored startup panel
+- POST returns job_id immediately
+- `research.db` created automatically
+- `jobs_log.json` starts receiving events
+- `/docs` shows all endpoints
+
+---
+
+## 6. Day 2 — Research Pipeline + Report Generation
+
+### Objectives
+- Tavily web search integration
+- Multi-query research execution
+- GPT-4o report generation
+- Async file saving
+
+---
+
+### File 1: Search Service
+
+`app/services/search_service.py`:
+
+```python
+import os
+from tavily import TavilyClient
+from app.utils.logger import get_logger
+
+logger = get_logger(__name__)
+
+
+class SearchService:
+    def __init__(self):
+        self.client = TavilyClient(api_key=os.getenv("TAVILY_API_KEY"))
+        self.max_results = int(os.getenv("MAX_SEARCH_RESULTS", 5))
+
+    async def search(self, query: str, max_results: int = None) -> list[dict]:
+        """Execute a single web search and return structured results."""
+        max_results = max_results or self.max_results
+        try:
+            response = self.client.search(
+                query=query,
+                search_depth="advanced",
+                max_results=max_results,
+                include_answer=True
+            )
+            results = []
+            for r in response.get("results", []):
+                results.append({
+                    "title": r.get("title", ""),
+                    "url": r.get("url", ""),
+                    "content": r.get("content", ""),
+                    "score": r.get("score", 0.0)
+                })
+            logger.debug(f"Search '{query[:50]}' → {len(results)} results")
+            return results
+
+        except Exception as e:
+            logger.error(f"Search failed for '{query}': {e}")
+            return []
+
+    async def search_multiple(self, queries: list[str]) -> list[dict]:
+        """Run multiple queries and return deduplicated results."""
+        all_results = []
+        seen_urls = set()
+
+        for query in queries:
+            results = await self.search(query)
+            for r in results:
+                if r["url"] not in seen_urls:
+                    seen_urls.add(r["url"])
+                    all_results.append(r)
+
+        logger.info(f"Multi-search: {len(queries)} queries → {len(all_results)} unique sources")
+        return all_results
+
+    def plan_queries(self, query: str, depth: str) -> list[str]:
+        """Generate search query variants from the main query."""
+        queries = [query]
+        if depth in ["standard", "deep"]:
+            queries += [
+                f"{query} market size statistics 2024",
+                f"{query} latest news analysis"
+            ]
+        if depth == "deep":
+            queries += [
+                f"{query} competitive comparison forecast",
+                f"{query} investment trends outlook"
+            ]
+        return queries
 ```
 
 ---
 
-### New Folder Structure (Day 4 additions)
+### File 2: Report Service
 
-```
-ai-research-system/
-├── app/
-│   ├── agents/               # NEW
-│   │   ├── __init__.py
-│   │   ├── planner_agent.py
-│   │   ├── research_agent.py
-│   │   ├── writer_agent.py
-│   │   └── reviewer_agent.py
-│   ├── crews/                # NEW
-│   │   ├── __init__.py
-│   │   └── research_crew.py
-│   ├── tasks/                # NEW
-│   │   ├── __init__.py
-│   │   └── research_tasks.py
+`app/services/report_service.py`:
+
+```python
+import os
+import aiofiles
+from datetime import datetime
+from openai import AsyncOpenAI
+from app.utils.logger import get_logger
+
+logger = get_logger(__name__)
+client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+
+class ReportService:
+
+    async def generate(self, query: str, key_findings: str, raw_results: list[dict]) -> str:
+        """Generate a structured markdown report using GPT-4o."""
+
+        sources_context = "\n".join([
+            f"- [{r['title']}]({r['url']}): {r['content'][:400]}"
+            for r in raw_results[:8]
+        ])
+
+        prompt = f"""You are a Principal Research Analyst at a top-tier strategy firm.
+
+RESEARCH QUERY: {query}
+
+KEY FINDINGS (pre-analyzed):
+{key_findings}
+
+SOURCE DATA:
+{sources_context}
+
+Write a comprehensive, executive-grade research report in Markdown with these sections:
+
+# [Report Title]
+
+## Executive Summary
+## Key Findings
+## Market Analysis
+## Competitive Landscape
+## Data & Statistics
+## Trends & Outlook
+## Strategic Recommendations
+## Sources
+
+Requirements:
+- Professional, precise language
+- Specific data points and numbers where available
+- Bold key statistics
+- Actionable recommendations
+- Minimum 1500 words"""
+
+        response = await client.chat.completions.create(
+            model="gpt-4o",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.2,
+            max_tokens=4000
+        )
+
+        return response.choices[0].message.content
+
+    async def save(self, content: str, job_id: str) -> str:
+        """Save report markdown to disk and return file path."""
+        os.makedirs("reports", exist_ok=True)
+        timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+        filename = f"report_{job_id[:8]}_{timestamp}.md"
+        file_path = f"reports/{filename}"
+
+        async with aiofiles.open(file_path, "w", encoding="utf-8") as f:
+            await f.write(content)
+
+        logger.info(f"Report saved: {file_path}")
+        return file_path
 ```
 
 ---
 
-### Step 1: Define Agents
+### File 3: Text Utilities
+
+`app/utils/text_utils.py`:
+
+```python
+def truncate(text: str, max_chars: int = 1000) -> str:
+    return text[:max_chars] + "..." if len(text) > max_chars else text
+
+
+def compile_context(results: list[dict], max_results: int = 6) -> str:
+    parts = []
+    for i, r in enumerate(results[:max_results], 1):
+        parts.append(
+            f"[Source {i}] {r['title']}\n"
+            f"URL: {r['url']}\n"
+            f"{truncate(r['content'], 1200)}"
+        )
+    return "\n\n---\n\n".join(parts)
+```
+
+---
+
+## 7. Day 3 — LangGraph Orchestration
+
+### Objectives
+- Define typed ResearchState
+- Build 4 graph nodes
+- Conditional routing with retry logic
+- Compile and run the StateGraph
+
+---
+
+### File 1: Research State
+
+`app/state/research_state.py`:
+
+```python
+from typing import TypedDict, Optional, List, Annotated
+import operator
+
+
+class ResearchState(TypedDict):
+    # Input
+    job_id: str
+    query: str
+    depth: str
+
+    # Planning output
+    sub_queries: List[str]
+    plan: str
+
+    # Research output
+    raw_results: List[dict]
+    sources_count: int
+
+    # Analysis output
+    key_findings: str
+    analysis_complete: bool
+
+    # Report output
+    report_content: str
+    report_file_path: str
+
+    # Control
+    current_step: str
+    retry_count: int
+    error: Optional[str]
+    status: str
+
+    # Append-only execution log
+    messages: Annotated[List[str], operator.add]
+```
+
+---
+
+### File 2: Planner Node
+
+`app/graphs/nodes/planner.py`:
+
+```python
+import json
+import os
+from openai import AsyncOpenAI
+from app.state.research_state import ResearchState
+from app.utils.logger import get_logger
+
+logger = get_logger(__name__)
+client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+
+async def planner_node(state: ResearchState) -> dict:
+    logger.info(f"[PLANNER] Job: {state['job_id']}")
+
+    prompt = f"""You are a research planning expert.
+Break this query into 3-5 specific, targeted web search queries.
+
+QUERY: {state['query']}
+DEPTH: {state['depth']}
+
+Return ONLY valid JSON:
+{{"queries": ["query 1", "query 2", "query 3"]}}"""
+
+    try:
+        response = await client.chat.completions.create(
+            model="gpt-4o",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.1,
+            response_format={"type": "json_object"}
+        )
+        data = json.loads(response.choices[0].message.content)
+        sub_queries = data.get("queries", [state["query"]])
+    except Exception as e:
+        logger.warning(f"Planner JSON parse failed: {e}. Using base query.")
+        sub_queries = [state["query"]]
+
+    logger.info(f"[PLANNER] Generated {len(sub_queries)} sub-queries")
+
+    return {
+        "sub_queries": sub_queries,
+        "plan": f"Decomposed into {len(sub_queries)} search queries",
+        "current_step": "planned",
+        "messages": [f"Planner: {len(sub_queries)} queries generated"]
+    }
+```
+
+---
+
+### File 3: Researcher Node
+
+`app/graphs/nodes/researcher.py`:
+
+```python
+from app.state.research_state import ResearchState
+from app.services.search_service import SearchService
+from app.utils.logger import get_logger
+
+logger = get_logger(__name__)
+search_service = SearchService()
+
+
+async def researcher_node(state: ResearchState) -> dict:
+    logger.info(f"[RESEARCHER] Job: {state['job_id']} | Retry: {state.get('retry_count', 0)}")
+
+    results = await search_service.search_multiple(state["sub_queries"])
+
+    logger.info(f"[RESEARCHER] Found {len(results)} sources")
+
+    return {
+        "raw_results": results,
+        "sources_count": len(results),
+        "current_step": "researched",
+        "messages": [f"Researcher: {len(results)} sources collected"]
+    }
+```
+
+---
+
+### File 4: Analyzer Node
+
+`app/graphs/nodes/analyzer.py`:
+
+```python
+import os
+from openai import AsyncOpenAI
+from app.state.research_state import ResearchState
+from app.utils.text_utils import compile_context
+from app.utils.logger import get_logger
+
+logger = get_logger(__name__)
+client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+
+async def analyzer_node(state: ResearchState) -> dict:
+    logger.info(f"[ANALYZER] Job: {state['job_id']}")
+
+    context = compile_context(state["raw_results"])
+
+    prompt = f"""You are a senior research analyst.
+
+TOPIC: {state['query']}
+
+RESEARCH DATA:
+{context}
+
+Extract and structure:
+1. Top 5-7 key findings with specific data points
+2. Critical statistics and numbers
+3. Main competitive dynamics
+4. Emerging trends
+5. Gaps or conflicting information
+
+Be specific. Include numbers when available."""
+
+    response = await client.chat.completions.create(
+        model="gpt-4o",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.1,
+        max_tokens=2000
+    )
+
+    findings = response.choices[0].message.content
+    logger.info(f"[ANALYZER] Analysis complete")
+
+    return {
+        "key_findings": findings,
+        "analysis_complete": True,
+        "current_step": "analyzed",
+        "messages": ["Analyzer: Key findings extracted"]
+    }
+```
+
+---
+
+### File 5: Reporter Node
+
+`app/graphs/nodes/reporter.py`:
+
+```python
+from app.state.research_state import ResearchState
+from app.utils.logger import get_logger
+
+logger = get_logger(__name__)
+
+
+async def reporter_node(state: ResearchState) -> dict:
+    logger.info(f"[REPORTER] Job: {state['job_id']} — launching CrewAI crew")
+
+    from app.crews.research_crew import ResearchCrew
+    crew = ResearchCrew()
+
+    result = await crew.run(
+        job_id=state["job_id"],
+        query=state["query"],
+        key_findings=state["key_findings"],
+        raw_results=state["raw_results"]
+    )
+
+    logger.info(f"[REPORTER] Report saved: {result['file_path']}")
+
+    return {
+        "report_content": result["report_content"],
+        "report_file_path": result["file_path"],
+        "current_step": "complete",
+        "status": "complete",
+        "messages": [f"Reporter: Report → {result['file_path']}"]
+    }
+```
+
+---
+
+### File 6: LangGraph State Machine
+
+`app/graphs/research_graph.py`:
+
+```python
+from langgraph.graph import StateGraph, END
+from langgraph.checkpoint.memory import MemorySaver
+
+from app.state.research_state import ResearchState
+from app.graphs.nodes.planner import planner_node
+from app.graphs.nodes.researcher import researcher_node
+from app.graphs.nodes.analyzer import analyzer_node
+from app.graphs.nodes.reporter import reporter_node
+from app.utils.logger import get_logger
+
+logger = get_logger(__name__)
+
+
+def route_after_research(state: ResearchState) -> str:
+    """
+    Conditional routing after web search:
+    - Enough sources → proceed to analyzer
+    - Too few + retries left → retry researcher
+    - Too few + no retries → skip to reporter
+    """
+    sources = state.get("sources_count", 0)
+    retries = state.get("retry_count", 0)
+    max_retries = 2
+
+    if sources >= 3:
+        logger.info(f"Route: {sources} sources → analyzer")
+        return "analyzer"
+    elif retries < max_retries:
+        logger.warning(f"Route: only {sources} sources, retry {retries + 1}/{max_retries}")
+        # Increment retry in state
+        state["retry_count"] = retries + 1
+        return "retry"
+    else:
+        logger.warning(f"Route: max retries reached, proceeding with {sources} sources")
+        return "reporter"
+
+
+def build_research_graph():
+    graph = StateGraph(ResearchState)
+
+    # Register all nodes
+    graph.add_node("planner", planner_node)
+    graph.add_node("researcher", researcher_node)
+    graph.add_node("analyzer", analyzer_node)
+    graph.add_node("reporter", reporter_node)
+
+    # Entry point
+    graph.set_entry_point("planner")
+
+    # Fixed edges
+    graph.add_edge("planner", "researcher")
+
+    # Conditional routing after researcher
+    graph.add_conditional_edges(
+        "researcher",
+        route_after_research,
+        {
+            "analyzer": "analyzer",
+            "retry": "researcher",
+            "reporter": "reporter"
+        }
+    )
+
+    # Fixed edges after analysis
+    graph.add_edge("analyzer", "reporter")
+    graph.add_edge("reporter", END)
+
+    # Compile with memory checkpointing
+    memory = MemorySaver()
+    compiled = graph.compile(checkpointer=memory)
+    logger.info("LangGraph research graph compiled successfully.")
+    return compiled
+
+
+# Singleton — compiled once at import time
+research_graph = build_research_graph()
+```
+
+---
+
+### LangGraph Flow Diagram
+
+```
+[START]
+   │
+   ▼
+┌─────────────────────────────┐
+│        PLANNER NODE          │
+│  Input:  query, depth        │
+│  Action: GPT-4o → sub_queries│
+│  Output: sub_queries[], plan │
+└──────────────┬──────────────┘
+               │
+               ▼
+┌─────────────────────────────┐
+│       RESEARCHER NODE        │
+│  Input:  sub_queries[]       │
+│  Action: Tavily web search   │
+│  Output: raw_results[]       │
+└──────────────┬──────────────┘
+               │
+    ┌──────────▼──────────┐
+    │  CONDITIONAL ROUTING │
+    │  sources >= 3?       │
+    │  YES → analyzer      │
+    │  NO + retries left   │
+    │      → researcher    │
+    │  NO + max retries    │
+    │      → reporter      │
+    └──────────┬──────────┘
+               │
+               ▼
+┌─────────────────────────────┐
+│        ANALYZER NODE         │
+│  Input:  raw_results[]       │
+│  Action: GPT-4o analysis     │
+│  Output: key_findings        │
+└──────────────┬──────────────┘
+               │
+               ▼
+┌─────────────────────────────┐
+│        REPORTER NODE         │
+│  Input:  key_findings,       │
+│          raw_results          │
+│  Action: CrewAI crew.run()   │
+│  Output: report_file_path    │
+└──────────────┬──────────────┘
+               │
+             [END]
+```
+
+---
+
+## 8. Day 4 — CrewAI Multi-Agent System
+
+### Objectives
+- 4 specialized agents with distinct roles
+- Sequential task pipeline with context chaining
+- Crew execution inside the reporter node
+- Full end-to-end pipeline working
+
+---
+
+### File 1: Planner Agent
 
 `app/agents/planner_agent.py`:
+
+```python
+from crewai import Agent
+
+
+def create_planner_agent() -> Agent:
+    return Agent(
+        role="Research Strategist",
+        goal=(
+            "Analyze the research topic and design a precise, structured research strategy "
+            "that identifies the most important areas to investigate."
+        ),
+        backstory=(
+            "You are a former McKinsey research director with 20 years of experience "
+            "designing research frameworks for Fortune 500 companies. You see patterns "
+            "others miss and know exactly which questions to ask."
+        ),
+        verbose=True,
+        allow_delegation=False,
+        max_iter=3
+    )
+```
+
+---
+
+### File 2: Research Agent
+
+`app/agents/research_agent.py`:
 
 ```python
 from crewai import Agent
 from crewai_tools import SerperDevTool
 
 
-def create_planner_agent() -> Agent:
-    return Agent(
-        role="Research Strategist",
-        goal="Break down complex research queries into structured, actionable research plans",
-        backstory="""You are an elite research strategist with 20 years of experience 
-        in market intelligence and competitive analysis. You excel at identifying the 
-        key questions that need answering and designing efficient research strategies.""",
-        verbose=True,
-        allow_delegation=True,
-        max_iter=3
-    )
-```
-
-`app/agents/research_agent.py`:
-
-```python
-from crewai import Agent
-from crewai_tools import SerperDevTool, WebsiteSearchTool
-
-
 def create_research_agent() -> Agent:
     search_tool = SerperDevTool()
-    web_tool = WebsiteSearchTool()
 
     return Agent(
         role="Senior Research Analyst",
-        goal="Find, verify, and compile accurate, comprehensive research data on any topic",
-        backstory="""You are a veteran research analyst specializing in technology 
-        and market intelligence. You have deep expertise in finding credible sources,
-        verifying data accuracy, and synthesizing complex information into clear insights.""",
-        tools=[search_tool, web_tool],
+        goal=(
+            "Gather comprehensive, accurate, and current data on the research topic. "
+            "Prioritize credible sources, specific statistics, and verifiable facts."
+        ),
+        backstory=(
+            "You are a veteran research analyst specializing in technology markets and "
+            "competitive intelligence. You have a reputation for finding the exact "
+            "data point everyone else missed."
+        ),
+        tools=[search_tool],
         verbose=True,
         allow_delegation=False,
         max_iter=5
     )
 ```
+
+---
+
+### File 3: Writer Agent
 
 `app/agents/writer_agent.py`:
 
@@ -1428,15 +1396,24 @@ from crewai import Agent
 def create_writer_agent() -> Agent:
     return Agent(
         role="Principal Report Writer",
-        goal="Transform research findings into compelling, professional reports",
-        backstory="""You are a professional report writer with expertise in creating 
-        executive-grade market research reports. Your reports are known for clarity,
-        precision, actionable insights, and professional presentation.""",
+        goal=(
+            "Transform raw research findings into a compelling, executive-grade "
+            "research report that is precise, well-structured, and immediately actionable."
+        ),
+        backstory=(
+            "You are a professional research writer whose reports are read by C-suite "
+            "executives at top investment banks. Your work is known for clarity, "
+            "precision, and the ability to make complex topics instantly understandable."
+        ),
         verbose=True,
         allow_delegation=False,
         max_iter=3
     )
 ```
+
+---
+
+### File 4: Reviewer Agent
 
 `app/agents/reviewer_agent.py`:
 
@@ -1447,10 +1424,15 @@ from crewai import Agent
 def create_reviewer_agent() -> Agent:
     return Agent(
         role="Quality Assurance Director",
-        goal="Review and improve report quality, accuracy, and completeness",
-        backstory="""You are a meticulous QA director who ensures all research reports 
-        meet the highest standards. You identify gaps, factual inconsistencies, 
-        and opportunities for clearer communication.""",
+        goal=(
+            "Ensure the research report meets the highest standards of accuracy, "
+            "completeness, and professional presentation before final delivery."
+        ),
+        backstory=(
+            "You are a meticulous QA director who has reviewed thousands of "
+            "research reports. You catch inconsistencies, gaps, and vague claims "
+            "that others overlook. You always improve what you review."
+        ),
         verbose=True,
         allow_delegation=True,
         max_iter=3
@@ -1459,105 +1441,132 @@ def create_reviewer_agent() -> Agent:
 
 ---
 
-### Step 2: Define Tasks
+### File 5: Research Tasks
 
 `app/tasks/research_tasks.py`:
 
 ```python
-from crewai import Task
-from crewai import Agent
+from crewai import Task, Agent
 
 
-def create_planning_task(agent: Agent, query: str) -> Task:
+def planning_task(agent: Agent, query: str) -> Task:
     return Task(
         description=f"""
-        Analyze this research query and create a detailed research plan:
-        
-        QUERY: {query}
-        
-        Your plan should include:
-        1. Key research areas to explore
-        2. Specific sub-questions to answer
-        3. Priority order for research
-        4. Types of data to look for (statistics, trends, competitors, etc.)
+Analyze this research request and create a structured research plan:
+
+QUERY: {query}
+
+Deliver:
+1. Research scope definition (what to cover, what to exclude)
+2. 5 key questions this report must answer
+3. Types of data to look for (market size, growth rates, competitors, trends)
+4. Recommended source types (analyst reports, earnings calls, industry data)
         """,
-        expected_output="A structured research plan with 3-5 specific research areas and sub-questions",
+        expected_output=(
+            "A clear research plan with defined scope, 5 key questions, "
+            "and a prioritized list of data types to gather."
+        ),
         agent=agent
     )
 
 
-def create_research_task(agent: Agent, query: str, research_plan: str = "") -> Task:
+def research_task(agent: Agent, query: str, key_findings: str) -> Task:
     return Task(
         description=f"""
-        Conduct comprehensive research based on the following:
-        
-        ORIGINAL QUERY: {query}
-        RESEARCH PLAN: {research_plan}
-        
-        Research Requirements:
-        - Find at least 5 credible sources
-        - Gather specific statistics and data points
-        - Identify key players, trends, and competitive landscape
-        - Note publication dates for recency verification
+Conduct deep research based on this plan.
+
+TOPIC: {query}
+
+PRE-ANALYZED FINDINGS TO EXPAND ON:
+{key_findings[:1500]}
+
+Your research must:
+- Find specific statistics (market size, growth %, revenue figures)
+- Identify top 3-5 companies/players and their positioning
+- Find at least 3 recent developments (last 6-12 months)
+- Note analyst forecasts and projections
+- Identify key risks and challenges
         """,
-        expected_output="Comprehensive research findings with sources, statistics, and key insights organized by topic",
+        expected_output=(
+            "Comprehensive research findings with specific data points, "
+            "company comparisons, statistics, and cited sources."
+        ),
         agent=agent
     )
 
 
-def create_writing_task(agent: Agent, query: str) -> Task:
+def writing_task(agent: Agent, query: str) -> Task:
     return Task(
         description=f"""
-        Write a professional research report based on the research findings provided.
-        
-        TOPIC: {query}
-        
-        Required Report Structure:
-        # [Report Title]
-        ## Executive Summary (3-4 sentences)
-        ## Key Findings (5-7 bullet points with data)
-        ## Market Analysis (detailed analysis with statistics)
-        ## Competitive Landscape (key players and positioning)
-        ## Trends & Outlook (future projections)
-        ## Recommendations (3-5 actionable items)
-        ## Sources (properly cited)
-        
-        Requirements:
-        - Professional, executive-grade language
-        - Specific data points throughout
-        - Formatted in clean Markdown
-        - 1500-2500 words
+Write a professional research report on: {query}
+
+Use ALL findings from the research task above.
+
+Required structure:
+# [Descriptive Report Title]
+
+## Executive Summary
+(3-4 sentences, key takeaways only)
+
+## Key Findings
+(5-7 bullet points with specific data)
+
+## Market Analysis
+(Detailed analysis with statistics, size, growth rates)
+
+## Competitive Landscape
+(Top players, market share, positioning, differentiation)
+
+## Trends & Outlook
+(Current trends + future projections with timeframes)
+
+## Strategic Recommendations
+(3-5 specific, actionable recommendations)
+
+## Sources
+(List all sources referenced)
+
+Requirements: Professional tone, minimum 1500 words, bold key numbers.
         """,
-        expected_output="A complete, professional market research report in Markdown format",
+        expected_output=(
+            "A complete, professional research report in Markdown format, "
+            "minimum 1500 words, with all required sections."
+        ),
         agent=agent
     )
 
 
-def create_review_task(agent: Agent) -> Task:
+def review_task(agent: Agent) -> Task:
     return Task(
         description="""
-        Review the research report for:
-        
-        1. Factual accuracy and consistency
-        2. Completeness (are all sections present and substantive?)
-        3. Clarity and professional tone
-        4. Data citation accuracy
-        5. Actionability of recommendations
-        
-        Provide specific improvements and output the final, refined version of the report.
+Review the complete research report from the writing task.
+
+Check for:
+1. Factual consistency (no contradictory statements)
+2. Section completeness (all required sections present and substantive)
+3. Data citation accuracy (numbers referenced correctly)
+4. Professional tone throughout
+5. Actionability of recommendations (specific enough to act on)
+6. Executive Summary alignment with body content
+
+Make improvements directly. Output the final, polished version of the complete report.
         """,
-        expected_output="A refined, final version of the research report with all improvements applied",
+        expected_output=(
+            "The final, reviewed, and improved research report in complete Markdown format, "
+            "ready for delivery."
+        ),
         agent=agent
     )
 ```
 
 ---
 
-### Step 3: Assemble the Crew
+### File 6: Research Crew
 
 `app/crews/research_crew.py`:
 
 ```python
+import asyncio
 import os
 import aiofiles
 from datetime import datetime
@@ -1567,31 +1576,35 @@ from app.agents.planner_agent import create_planner_agent
 from app.agents.research_agent import create_research_agent
 from app.agents.writer_agent import create_writer_agent
 from app.agents.reviewer_agent import create_reviewer_agent
-from app.tasks.research_tasks import (
-    create_planning_task, create_research_task,
-    create_writing_task, create_review_task
-)
+from app.tasks.research_tasks import planning_task, research_task, writing_task, review_task
+from app.utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class ResearchCrew:
+
     def __init__(self):
         self.planner = create_planner_agent()
         self.researcher = create_research_agent()
         self.writer = create_writer_agent()
         self.reviewer = create_reviewer_agent()
 
-    async def run(self, job_id: str, query: str) -> dict:
-        """Run the full CrewAI research crew and return results."""
+    async def run(self, job_id: str, query: str,
+                  key_findings: str = "", raw_results: list = None) -> dict:
+        """
+        Execute the full CrewAI research crew.
+        Returns dict with report_content and file_path.
+        """
+        raw_results = raw_results or []
 
-        # Define tasks (sequential pipeline)
         tasks = [
-            create_planning_task(self.planner, query),
-            create_research_task(self.researcher, query),
-            create_writing_task(self.writer, query),
-            create_review_task(self.reviewer)
+            planning_task(self.planner, query),
+            research_task(self.researcher, query, key_findings),
+            writing_task(self.writer, query),
+            review_task(self.reviewer)
         ]
 
-        # Assemble crew
         crew = Crew(
             agents=[self.planner, self.researcher, self.writer, self.reviewer],
             tasks=tasks,
@@ -1599,18 +1612,16 @@ class ResearchCrew:
             verbose=True
         )
 
-        # Execute (blocking - run in executor for async compatibility)
-        import asyncio
+        logger.info(f"[CREW] Kicking off 4-agent crew for job {job_id}")
+
+        # crew.kickoff() is synchronous — run in thread pool
         loop = asyncio.get_event_loop()
         result = await loop.run_in_executor(None, crew.kickoff)
 
-        # Save report
         report_content = str(result)
         file_path = await self._save_report(report_content, job_id)
 
         return {
-            "job_id": job_id,
-            "status": "complete",
             "report_content": report_content,
             "file_path": file_path
         }
@@ -1618,1109 +1629,649 @@ class ResearchCrew:
     async def _save_report(self, content: str, job_id: str) -> str:
         os.makedirs("reports", exist_ok=True)
         timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
-        path = f"reports/crew_report_{job_id[:8]}_{timestamp}.md"
-        async with aiofiles.open(path, "w") as f:
+        file_path = f"reports/report_{job_id[:8]}_{timestamp}.md"
+        async with aiofiles.open(file_path, "w", encoding="utf-8") as f:
             await f.write(content)
-        return path
+        logger.info(f"[CREW] Report saved: {file_path}")
+        return file_path
 ```
 
 ---
 
-### Step 4: Full Integration — LangGraph + CrewAI
+### Final Test — Full Pipeline
 
-Update the reporter node to use CrewAI:
+```bash
+# Start server
+uvicorn app.main:app --reload --port 8000
 
-`app/graphs/nodes/reporter.py` (updated):
+# Submit research job
+curl -X POST http://localhost:8000/research/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "AI semiconductor market analysis for NVIDIA and AMD in 2024",
+    "depth": "deep"
+  }'
 
-```python
-from app.state.research_state import ResearchState
-from app.crews.research_crew import ResearchCrew
-from app.services.n8n_service import trigger_n8n_webhook
+# Poll status (replace job_id)
+curl http://localhost:8000/research/YOUR-JOB-ID-HERE
 
-crew_runner = ResearchCrew()
+# List all reports
+curl http://localhost:8000/reports/
 
-
-async def reporter_node(state: ResearchState) -> ResearchState:
-    """Use CrewAI crew to generate the final polished report."""
-
-    result = await crew_runner.run(
-        job_id=state["job_id"],
-        query=state["query"]
-    )
-
-    # Notify n8n on completion
-    await trigger_n8n_webhook({
-        "event": "crew_report_complete",
-        "job_id": state["job_id"],
-        "file_path": result["file_path"],
-        "query": state["query"]
-    })
-
-    return {
-        **state,
-        "report_content": result["report_content"],
-        "report_file_path": result["file_path"],
-        "current_step": "complete",
-        "status": "complete",
-        "messages": [f"CrewAI: Report complete → {result['file_path']}"]
-    }
-```
-
----
-
-### Final Pipeline Flow (Day 4)
-
-```
-POST /research
-     │
-     ▼
-[FastAPI Router]
-  - Validates request
-  - Creates job_id
-  - Starts background task
-     │
-     ▼
-[LangGraph StateGraph]
-  ├── [Planner Node] → breaks query into sub-queries
-  ├── [Researcher Node] → executes web searches
-  ├── [Analyzer Node] → extracts key findings
-  └── [Reporter Node]
-         │
-         ▼
-    [CrewAI Crew]
-      ├── Planner Agent → research strategy
-      ├── Research Agent → deep web search
-      ├── Writer Agent → drafts report
-      └── Reviewer Agent → refines report
-         │
-         ▼
-    [Markdown Report saved to /reports/]
-         │
-         ▼
-    [n8n Webhook triggered]
-      ├── Save to database
-      ├── Send email notification
-      └── Trigger downstream actions
+# List all jobs
+curl http://localhost:8000/research/
 ```
 
 **Day 4 Success Criteria:**
-- CrewAI crew runs all 4 agents in sequence
-- Each agent produces meaningful output
-- Final report is saved to disk
-- n8n receives `crew_report_complete` event
-- End-to-end pipeline works from single POST request
+- 4 CrewAI agents run sequentially
+- Each agent produces meaningful output visible in terminal
+- Final report saved in `/reports/`
+- Job status shows `complete` in SQLite
+- `jobs_log.json` has full event history
 
 ---
 
-## 7. Folder Structure Evolution
+## 9. Folder Structure Evolution
 
-### Day 1 Structure
 ```
-ai-research-system/
-├── app/
-│   ├── main.py
-│   ├── routers/research.py
-│   ├── schemas/research.py
-│   └── services/n8n_service.py
-├── .env
-└── requirements.txt
-```
+DAY 1                          DAY 2                          DAY 3                         DAY 4
+─────────────────────          ─────────────────────          ─────────────────────         ─────────────────────
+app/                           app/                           app/                          app/
+├── main.py                    ├── main.py                    ├── main.py                   ├── main.py
+├── routers/                   ├── routers/                   ├── routers/                  ├── routers/
+│   ├── research.py            │   ├── research.py            │   ├── research.py           │   ├── research.py
+│   └── reports.py             │   └── reports.py             │   └── reports.py            │   └── reports.py
+├── schemas/                   ├── schemas/                   ├── schemas/                  ├── schemas/
+│   ├── research.py            │   ├── research.py            │   ├── research.py           │   ├── research.py
+│   └── job.py                 │   └── job.py                 │   └── job.py                │   └── job.py
+├── services/                  ├── services/                  ├── services/                 ├── services/
+│   ├── job_service.py         │   ├── job_service.py         │   ├── job_service.py        │   ├── job_service.py
+│   └── notification_          │   ├── notification_          │   ├── notification_          │   ├── notification_
+│       service.py             │   │   service.py             │   │   service.py             │   │   service.py
+└── utils/                     │   ├── search_service.py ←NEW │   ├── search_service.py     │   ├── search_service.py
+    ├── logger.py              │   └── report_service.py ←NEW │   └── report_service.py     │   └── report_service.py
+    └── text_utils.py          └── utils/                     ├── state/              ←NEW  ├── state/
+                                   ├── logger.py              │   └── research_state.py     │   └── research_state.py
+reports/                           ├── text_utils.py          ├── graphs/             ←NEW  ├── graphs/
+data/                              └── file_utils.py ←NEW     │   ├── research_graph.py     │   ├── research_graph.py
+jobs_log.json                                                  │   └── nodes/                │   └── nodes/
+research.db                   reports/                        │       ├── planner.py         │       ├── planner.py
+                              data/                           │       ├── researcher.py      │       ├── researcher.py
+                              jobs_log.json                   │       ├── analyzer.py        │       ├── analyzer.py
+                              research.db                     │       └── reporter.py        │       └── reporter.py
+                                                              └── utils/               ←NEW  ├── agents/         ←NEW
+                                                                  ├── logger.py              │   ├── planner_agent.py
+                                                                  └── text_utils.py          │   ├── research_agent.py
+                                                                                             │   ├── writer_agent.py
+                                                              reports/                        │   └── reviewer_agent.py
+                                                              memory/              ←NEW       ├── crews/           ←NEW
+                                                              jobs_log.json                   │   └── research_crew.py
+                                                              research.db                     ├── tasks/           ←NEW
+                                                                                             │   └── research_tasks.py
+                                                                                             └── utils/
+                                                                                                 ├── logger.py
+                                                                                                 └── text_utils.py
 
-### Day 2 Structure
-```
-ai-research-system/
-├── app/
-│   ├── main.py
-│   ├── routers/research.py
-│   ├── schemas/research.py
-│   ├── services/
-│   │   ├── n8n_service.py
-│   │   ├── research_service.py     ← NEW
-│   │   ├── search_service.py       ← NEW
-│   │   └── report_service.py       ← NEW
-│   └── utils/
-│       ├── file_utils.py           ← NEW
-│       └── text_utils.py           ← NEW
-├── reports/                        ← NEW
-├── data/                           ← NEW
-├── .env
-└── requirements.txt
-```
-
-### Day 3 Structure
-```
-ai-research-system/
-├── app/
-│   ├── main.py
-│   ├── routers/
-│   ├── schemas/
-│   ├── services/
-│   ├── utils/
-│   ├── state/
-│   │   └── research_state.py       ← NEW
-│   └── graphs/                     ← NEW
-│       ├── research_graph.py
-│       └── nodes/
-│           ├── planner.py
-│           ├── researcher.py
-│           ├── analyzer.py
-│           └── reporter.py
-├── reports/
-├── data/
-├── .env
-└── requirements.txt
-```
-
-### Day 4 (Final) Structure
-```
-ai-research-system/
-├── app/
-│   ├── main.py
-│   ├── routers/
-│   ├── schemas/
-│   ├── services/
-│   ├── utils/
-│   ├── state/
-│   ├── graphs/
-│   ├── agents/                     ← NEW
-│   │   ├── planner_agent.py
-│   │   ├── research_agent.py
-│   │   ├── writer_agent.py
-│   │   └── reviewer_agent.py
-│   ├── crews/                      ← NEW
-│   │   └── research_crew.py
-│   └── tasks/                      ← NEW
-│       └── research_tasks.py
-├── reports/
-├── data/
-├── memory/                         ← NEW (LangGraph checkpoints)
-├── .env
-└── requirements.txt
+                                                                                             reports/
+                                                                                             memory/
+                                                                                             logs/
+                                                                                             jobs_log.json
+                                                                                             research.db
 ```
 
 ---
 
-## 8. Detailed Backend Architecture
-
-### Clean Architecture Layers
+## 10. Full Pipeline Flow
 
 ```
-┌─────────────────────────────────────────────────────┐
-│                   PRESENTATION LAYER                  │
-│         FastAPI Routers — HTTP request handling       │
-└───────────────────────┬─────────────────────────────┘
-                        │
-┌───────────────────────▼─────────────────────────────┐
-│                  ORCHESTRATION LAYER                  │
-│       LangGraph StateGraph — workflow control         │
-└───────────────────────┬─────────────────────────────┘
-                        │
-┌───────────────────────▼─────────────────────────────┐
-│                  AGENT LAYER (CrewAI)                 │
-│    Planner · Researcher · Writer · Reviewer           │
-└───────────────────────┬─────────────────────────────┘
-                        │
-┌───────────────────────▼─────────────────────────────┐
-│                   SERVICE LAYER                       │
-│   SearchService · ReportService · N8nService          │
-└───────────────────────┬─────────────────────────────┘
-                        │
-┌───────────────────────▼─────────────────────────────┐
-│                  INFRASTRUCTURE LAYER                 │
-│   Vector DB · File System · PostgreSQL · n8n          │
-└─────────────────────────────────────────────────────┘
-```
-
-### Module Responsibilities
-
-| Module | Path | Responsibility |
-|--------|------|---------------|
-| **Router** | `app/routers/` | Handle HTTP, validate input, trigger background tasks |
-| **Schema** | `app/schemas/` | Pydantic models for request/response validation |
-| **Service** | `app/services/` | Business logic: search, report generation, n8n calls |
-| **State** | `app/state/` | TypedDict definition for LangGraph state |
-| **Graph** | `app/graphs/` | LangGraph StateGraph assembly and compilation |
-| **Node** | `app/graphs/nodes/` | Individual graph node functions |
-| **Agent** | `app/agents/` | CrewAI Agent definitions with roles and tools |
-| **Task** | `app/tasks/` | CrewAI Task definitions with expected outputs |
-| **Crew** | `app/crews/` | CrewAI Crew assembly and execution |
-| **Utils** | `app/utils/` | Shared utilities: file I/O, text processing |
-
----
-
-## 9. n8n Workflow Architecture
-
-### Workflow 1: Research Job Received
-
-```
-[Webhook: POST /research]
-         │
-         ▼
-[Set Node: Extract job_id, query]
-         │
-         ▼
-[IF Node: depth == "deep"?]
-    YES ─→ [Send Slack Notification: "Deep research started"]
-    NO  ─→ [Continue]
-         │
-         ▼
-[Wait Node: 30 seconds]
-         │
-         ▼
-[HTTP Request: GET /research/{job_id}/status]
-```
-
----
-
-### Workflow 2: Report Complete Notification
-
-```
-[Webhook: POST /webhook/report-complete]
-         │
-         ▼
-[Set Node: Parse payload]
-         │
-         ▼
-[Write Binary File: Save report to /outputs/]
-         │
-         ├──→ [Send Email: Report ready notification]
-         │
-         └──→ [HTTP Request: Update job status in DB]
+                        ┌─────────────────────────────────────┐
+                        │         USER / POSTMAN / CURL        │
+                        │   POST /research/  {query, depth}    │
+                        └──────────────────┬──────────────────┘
+                                           │
+                                           ▼
+                        ┌─────────────────────────────────────┐
+                        │           FASTAPI ROUTER             │
+                        │  - Validate request (Pydantic)       │
+                        │  - Generate job_id (UUID)            │
+                        │  - create_job() → SQLite             │
+                        │  - Start BackgroundTask              │
+                        │  - Return 202 + job_id immediately   │
+                        └──────────────────┬──────────────────┘
+                                           │ (background)
+                                           ▼
+                        ┌─────────────────────────────────────┐
+                        │      NOTIFICATION SERVICE            │
+                        │  job_started() → terminal + log      │
+                        └──────────────────┬──────────────────┘
+                                           │
+                                           ▼
+                        ┌─────────────────────────────────────┐
+                        │       LANGGRAPH STATE MACHINE         │
+                        │                                       │
+                        │  ┌──────────┐                         │
+                        │  │ PLANNER  │ GPT-4o → sub_queries   │
+                        │  └────┬─────┘                         │
+                        │       │                               │
+                        │  ┌────▼─────┐                         │
+                        │  │RESEARCHER│ Tavily search × N       │
+                        │  └────┬─────┘                         │
+                        │       │ conditional routing            │
+                        │  ┌────▼─────┐                         │
+                        │  │ ANALYZER │ GPT-4o key findings     │
+                        │  └────┬─────┘                         │
+                        │       │                               │
+                        │  ┌────▼─────┐                         │
+                        │  │ REPORTER │ → calls CrewAI          │
+                        │  └──────────┘                         │
+                        └──────────────────┬──────────────────┘
+                                           │
+                                           ▼
+                        ┌─────────────────────────────────────┐
+                        │        CREWAI MULTI-AGENT CREW        │
+                        │                                       │
+                        │  [Planner Agent]                      │
+                        │    → Research strategy + scope        │
+                        │         │                             │
+                        │  [Research Agent] + SerperDevTool     │
+                        │    → Deep web search + data           │
+                        │         │                             │
+                        │  [Writer Agent]                       │
+                        │    → Full structured report draft     │
+                        │         │                             │
+                        │  [Reviewer Agent]                     │
+                        │    → QA + refinement + final report   │
+                        └──────────────────┬──────────────────┘
+                                           │
+                                           ▼
+                        ┌─────────────────────────────────────┐
+                        │           OUTPUT LAYER               │
+                        │                                       │
+                        │  reports/report_{id}_{ts}.md  saved  │
+                        │  SQLite: status = "complete"          │
+                        │  jobs_log.json: job_complete event    │
+                        │  Terminal: ✅ Rich success panel      │
+                        └─────────────────────────────────────┘
 ```
 
 ---
 
-### Workflow Diagram
+## 11. API Design
 
-```
-n8n Workflow: Research Pipeline Monitor
+### Endpoints Reference
 
- ┌──────────────┐     ┌──────────────┐     ┌──────────────────┐
- │   Webhook    │────→│  Extract     │────→│  Conditional     │
- │  (Trigger)   │     │  Payload     │     │  Routing         │
- └──────────────┘     └──────────────┘     └──────┬───────────┘
-                                                   │
-                              ┌────────────────────┼────────────────────┐
-                              ▼                    ▼                    ▼
-                     ┌──────────────┐    ┌──────────────┐    ┌──────────────────┐
-                     │ Save Report  │    │  Send Email  │    │  Update Database │
-                     │  to Disk     │    │Notification  │    │     Status       │
-                     └──────────────┘    └──────────────┘    └──────────────────┘
-```
-
----
-
-## 10. LangGraph Architecture
-
-### Core Concepts
-
-| Concept | Definition | Example |
-|---------|-----------|---------|
-| **StateGraph** | A directed graph where nodes share a typed state | `ResearchState` TypedDict |
-| **Node** | An async function that reads/modifies state | `planner_node`, `researcher_node` |
-| **Edge** | A fixed transition between two nodes | `planner → researcher` |
-| **Conditional Edge** | Dynamic routing based on state values | Route to retry or analyzer |
-| **Checkpoint** | Persisted snapshot of state at a node | Enables resume and replay |
-| **Thread** | A unique execution instance (identified by `thread_id`) | One per job |
-
----
-
-### State Flow Diagram
-
-```
-ResearchState at each node:
-
-INITIAL STATE:
-  job_id: "abc123"
-  query: "NVIDIA market analysis"
-  sub_queries: []
-  raw_results: []
-  status: "processing"
-
-AFTER PLANNER:
-  sub_queries: ["NVIDIA revenue 2024", "NVIDIA GPU market share", ...]
-  plan: "Generated 4 queries"
-  current_step: "planned"
-
-AFTER RESEARCHER:
-  raw_results: [{title, url, content}, ...]
-  sources_count: 12
-  current_step: "researched"
-
-AFTER ANALYZER:
-  key_findings: "1. NVIDIA revenue grew 122%... 2. ..."
-  analysis_complete: true
-  current_step: "analyzed"
-
-AFTER REPORTER:
-  report_content: "# NVIDIA Market Analysis..."
-  report_file_path: "reports/report_abc123_20240115.md"
-  status: "complete"
-```
-
----
-
-### Retry Logic Pattern
-
-```python
-def should_retry(state: ResearchState) -> str:
-    retry_count = state.get("retry_count", 0)
-    sources = state.get("sources_count", 0)
-    
-    if sources < 2 and retry_count < 2:
-        # Increment retry counter
-        state["retry_count"] = retry_count + 1
-        return "retry"   # → back to researcher node
-    
-    return "analyzer"    # → proceed
-```
-
----
-
-## 11. CrewAI Multi-Agent Architecture
-
-### Agent Roles and Responsibilities
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                    RESEARCH CREW                          │
-│                                                           │
-│  ┌─────────────────┐     ┌──────────────────────────┐   │
-│  │ PLANNER AGENT   │────→│ Tasks:                   │   │
-│  │ Research        │     │ - Analyze query           │   │
-│  │ Strategist      │     │ - Create research plan    │   │
-│  │                 │     │ - Define search areas     │   │
-│  └─────────────────┘     └──────────────────────────┘   │
-│           │                                               │
-│           ▼                                               │
-│  ┌─────────────────┐     ┌──────────────────────────┐   │
-│  │ RESEARCH AGENT  │────→│ Tasks:                   │   │
-│  │ Senior Research │     │ - Web search             │   │
-│  │ Analyst         │     │ - Verify sources         │   │
-│  │ Tools: Serper,  │     │ - Extract data points    │   │
-│  │ WebSearch       │     │ - Compile findings       │   │
-│  └─────────────────┘     └──────────────────────────┘   │
-│           │                                               │
-│           ▼                                               │
-│  ┌─────────────────┐     ┌──────────────────────────┐   │
-│  │ WRITER AGENT    │────→│ Tasks:                   │   │
-│  │ Principal       │     │ - Structure report       │   │
-│  │ Report Writer   │     │ - Write sections         │   │
-│  │                 │     │ - Add data citations     │   │
-│  └─────────────────┘     └──────────────────────────┘   │
-│           │                                               │
-│           ▼                                               │
-│  ┌─────────────────┐     ┌──────────────────────────┐   │
-│  │ REVIEWER AGENT  │────→│ Tasks:                   │   │
-│  │ QA Director     │     │ - Check accuracy         │   │
-│  │                 │     │ - Improve clarity        │   │
-│  │                 │     │ - Final refinement       │   │
-│  └─────────────────┘     └──────────────────────────┘   │
-└─────────────────────────────────────────────────────────┘
-```
-
-### Process Types
-
-| Process | Description | When to Use |
-|---------|-------------|-------------|
-| `Process.sequential` | Tasks run in order, each sees previous output | Default — most use cases |
-| `Process.hierarchical` | Manager agent delegates to workers | Complex, dynamic workflows |
-
----
-
-## 12. RAG Architecture
-
-### When to Add RAG
-
-Add RAG in **Phase 3** (after Day 4) when you want agents to:
-- Query your own document library
-- Reference proprietary internal documents
-- Search previously generated reports
-- Avoid re-searching the web for known information
-
----
-
-### RAG Pipeline
-
-```
-INGESTION PIPELINE:
-Document (PDF/Text/Web)
-         │
-         ▼
-[Document Loader] — PyPDF2, BeautifulSoup, LangChain loaders
-         │
-         ▼
-[Text Splitter] — RecursiveCharacterTextSplitter
-  chunk_size=1000, chunk_overlap=200
-         │
-         ▼
-[Embedding Model] — OpenAI text-embedding-3-small
-         │
-         ▼
-[Vector Store] — Chroma (local) or Qdrant (advanced)
-         │
-         ▼
-[Persisted to disk: ./chroma_db/]
-
-
-RETRIEVAL PIPELINE:
-Research Query
-         │
-         ▼
-[Query Embedding] — same embedding model
-         │
-         ▼
-[Similarity Search] — top_k=5 most relevant chunks
-         │
-         ▼
-[Context Injection] — inject into agent/node prompt
-         │
-         ▼
-[LLM Generation] — answer grounded in retrieved context
-```
-
----
-
-### RAG Implementation (Phase 3)
-
-```python
-from langchain_community.vectorstores import Chroma
-from langchain_openai import OpenAIEmbeddings
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.document_loaders import PyPDFLoader
-
-
-class RAGService:
-    def __init__(self):
-        self.embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
-        self.vectorstore = Chroma(
-            persist_directory="./chroma_db",
-            embedding_function=self.embeddings
-        )
-
-    async def ingest_document(self, file_path: str):
-        loader = PyPDFLoader(file_path)
-        documents = loader.load()
-
-        splitter = RecursiveCharacterTextSplitter(
-            chunk_size=1000, chunk_overlap=200
-        )
-        chunks = splitter.split_documents(documents)
-        self.vectorstore.add_documents(chunks)
-
-    async def retrieve(self, query: str, k: int = 5) -> list[str]:
-        docs = self.vectorstore.similarity_search(query, k=k)
-        return [doc.page_content for doc in docs]
-```
-
----
-
-## 13. Memory Architecture
-
-### Memory Types in This System
-
-| Memory Type | Implementation | Scope | Persistence |
-|-------------|---------------|-------|-------------|
-| **Short-term** | LangGraph state (TypedDict) | Single workflow run | In-memory |
-| **Workflow** | LangGraph MemorySaver | Across graph nodes | Session |
-| **Long-term** | SQLite/PostgreSQL | Across all runs | Permanent |
-| **Vector** | Chroma/FAISS | Semantic similarity search | Disk |
-| **Agent** | CrewAI task context | Within crew execution | Session |
-
----
-
-### Memory Architecture Diagram
-
-```
-SHORT-TERM MEMORY (per run):
-  ResearchState TypedDict
-  ├── query
-  ├── sub_queries
-  ├── raw_results
-  └── report_content
-
-WORKFLOW MEMORY (LangGraph):
-  MemorySaver checkpoints
-  ├── thread_id: "job-abc123"
-  ├── checkpoint at each node
-  └── enables resume on failure
-
-LONG-TERM MEMORY (SQLite):
-  jobs table
-  ├── id, query, status, created_at
-  ├── report_path
-  └── metadata (JSON)
-
-VECTOR MEMORY (Chroma):
-  Previous reports embedded
-  ├── Similarity search on new queries
-  ├── Avoid duplicate research
-  └── Build institutional knowledge
-```
-
----
-
-### Agent Memory Sharing
-
-CrewAI agents within a single crew share context through **task output chaining**:
-
-```
-Planner output → injected into Researcher task description
-Researcher output → injected into Writer task description
-Writer output → injected into Reviewer task description
-```
-
-This creates a coherent information chain without requiring a shared external memory store.
-
----
-
-## 14. API Design
-
-### Endpoints
-
-#### POST /research/
+#### `POST /research/`
 Start a new research job.
 
 ```json
-Request:
+// Request
 {
-  "query": "Generate AI semiconductor market research for NVIDIA and AMD",
-  "depth": "standard",
+  "query": "AI semiconductor market research for NVIDIA and AMD",
+  "depth": "deep",
   "format": "markdown"
 }
 
-Response (202 Accepted):
+// Response 202
 {
-  "job_id": "3f7a1b2c-...",
-  "status": "processing",
-  "message": "LangGraph workflow started.",
-  "query": "Generate AI semiconductor market research...",
+  "job_id": "3f7a1b2c-4d5e-6f7a-8b9c-0d1e2f3a4b5c",
+  "status": "queued",
+  "message": "Research pipeline started. Poll /research/{job_id} for status.",
+  "query": "AI semiconductor market research for NVIDIA and AMD",
   "created_at": "2024-01-15T10:30:00"
 }
 ```
 
 ---
 
-#### GET /research/{job_id}
-Check job status and retrieve report path.
+#### `GET /research/{job_id}`
+Poll job status.
 
 ```json
-Response (200 OK):
+// Processing
+{
+  "job_id": "3f7a1b2c-...",
+  "status": "processing",
+  "query": "AI semiconductor market...",
+  "depth": "deep",
+  "report_path": null,
+  "sources_count": 0,
+  "error": null,
+  "created_at": "2024-01-15T10:30:00",
+  "completed_at": null,
+  "duration_seconds": null
+}
+
+// Complete
 {
   "job_id": "3f7a1b2c-...",
   "status": "complete",
-  "query": "...",
-  "report_path": "reports/report_3f7a1b2c_20240115.md",
-  "sources_count": 12,
-  "created_at": "...",
-  "completed_at": "..."
+  "query": "AI semiconductor market...",
+  "depth": "deep",
+  "report_path": "reports/report_3f7a1b2c_20240115_103045.md",
+  "sources_count": 14,
+  "error": null,
+  "created_at": "2024-01-15T10:30:00",
+  "completed_at": "2024-01-15T10:33:22",
+  "duration_seconds": 202.4
 }
 ```
 
 ---
 
-#### GET /research/{job_id}/report
-Download the generated report.
+#### `GET /research/`
+List recent jobs.
 
-```
-Response: text/markdown file download
+```bash
+curl "http://localhost:8000/research/?limit=10"
 ```
 
 ---
 
-#### GET /research/health
-Health check endpoint.
+#### `GET /reports/{filename}`
+Download a report file.
+
+```bash
+curl http://localhost:8000/reports/report_3f7a1b2c_20240115_103045.md
+```
+
+---
+
+#### `GET /reports/`
+List all generated reports.
 
 ```json
-{
-  "status": "ok",
-  "service": "research-api",
-  "version": "1.0.0"
-}
+[
+  {"filename": "report_3f7a1b2c_20240115.md", "path": "reports/report_3f7a1b2c_20240115.md"},
+  {"filename": "report_9a8b7c6d_20240114.md", "path": "reports/report_9a8b7c6d_20240114.md"}
+]
 ```
 
 ---
 
-### Async Pattern
+## 12. Job Status & Tracking System
 
-All endpoints use FastAPI's `BackgroundTasks` for non-blocking execution:
+### How It Replaces n8n Monitoring
 
-```python
-@router.post("/")
-async def create_job(request: ResearchRequest, background_tasks: BackgroundTasks):
-    job_id = str(uuid.uuid4())
-    background_tasks.add_task(run_pipeline, job_id, request.query)
-    return {"job_id": job_id, "status": "processing"}
-    # Returns immediately — pipeline runs in background
+n8n was being used partly as a job monitor. The SQLite + NotificationService combo replaces this completely.
+
+### Job Lifecycle
+
+```
+[POST /research/]
+      │
+      ▼
+  status: "queued"        → SQLite write, jobs_log entry
+      │
+      ▼
+  status: "processing"    → SQLite update, terminal panel
+      │
+      ▼ (pipeline runs)
+  status: "complete"      → SQLite update, report_path saved
+      │ or
+  status: "failed"        → SQLite update, error saved
 ```
 
----
-
-## 15. Local Development Setup Guide
-
-### System Requirements
-
-| Requirement | Version | Purpose |
-|------------|---------|---------|
-| Python | 3.11+ | Primary language |
-| Node.js | 18+ | n8n runtime |
-| Git | Any | Version control |
-| VS Code | Latest | IDE |
-
----
-
-### Complete Setup Script
+### Query jobs_log.json
 
 ```bash
-# 1. Clone/create project
-mkdir ai-research-system && cd ai-research-system
+# Show all completed jobs
+cat jobs_log.json | python -c "
+import json, sys
+for line in sys.stdin:
+    e = json.loads(line)
+    if e['event'] == 'job_complete':
+        print(f\"{e['job_id'][:8]} | {e['query'][:50]} | {e['report_path']}\")
+"
 
-# 2. Python environment
-python -m venv venv
-source venv/bin/activate  # Mac/Linux
-# venv\Scripts\activate   # Windows
-
-# 3. Install Python dependencies (Day 1)
-pip install fastapi uvicorn python-dotenv httpx pydantic openai requests
-
-# 4. Install n8n
-npm install -g n8n
-
-# 5. Create .env
-cat > .env << 'EOF'
-OPENAI_API_KEY=sk-your-key-here
-TAVILY_API_KEY=your-tavily-key
-SERPER_API_KEY=your-serper-key
-N8N_WEBHOOK_URL=http://localhost:5678/webhook/research
-APP_ENV=development
-EOF
-
-# 6. Start FastAPI server
-uvicorn app.main:app --reload --port 8000
-
-# 7. Start n8n (in separate terminal)
-n8n start
+# Count events by type
+cat jobs_log.json | python -c "
+import json, sys
+from collections import Counter
+events = [json.loads(l)['event'] for l in sys.stdin]
+for k, v in Counter(events).items():
+    print(f'{k}: {v}')
+"
 ```
 
----
-
-### API Keys Required
-
-| Service | Purpose | Free Tier | URL |
-|---------|---------|-----------|-----|
-| OpenAI | LLM backbone | $5 credit | platform.openai.com |
-| Tavily | Web search | 1000 free/month | tavily.com |
-| Serper | Google search for CrewAI | 2500 free/month | serper.dev |
-
----
-
-### VS Code Extensions (Recommended)
-
-- Python (Microsoft)
-- Pylance
-- REST Client (for testing without Postman)
-- GitLens
-- Python Docstring Generator
-- JSON Viewer
-
----
-
-### Debugging Process
+### Query SQLite Directly
 
 ```bash
-# Check if FastAPI is running
-curl http://localhost:8000/
-
-# Check n8n connection
-curl http://localhost:5678/
-
-# View FastAPI logs in real-time
-uvicorn app.main:app --reload --log-level debug
-
-# Test research endpoint
-curl -X POST http://localhost:8000/research/ \
-  -H "Content-Type: application/json" \
-  -d '{"query": "NVIDIA market analysis", "depth": "standard"}'
+sqlite3 research.db "SELECT job_id, status, substr(query,1,50), duration_seconds FROM jobs ORDER BY created_at DESC LIMIT 10;"
 ```
 
 ---
 
-## 16. Important Engineering Concepts
+## 13. Common Mistakes & Solutions
 
-### Asynchronous Execution
-
-Python's `async`/`await` allows I/O-bound tasks (HTTP calls, file writes) to run concurrently without blocking:
+### Mistake 1: Running crew.kickoff() Inside async Without Executor
 
 ```python
-# BLOCKING (avoid for I/O):
-result = requests.get(url)       # Blocks entire thread
+# WRONG — blocks the event loop
+result = crew.kickoff()
 
-# NON-BLOCKING (correct):
-result = await httpx.get(url)    # Yields control while waiting
-```
-
-In FastAPI, every endpoint handler should be `async def` when making network calls.
-
----
-
-### Workflow Orchestration
-
-LangGraph manages **state transitions** between nodes. This solves the problem of:
-- What happens when a node fails?
-- How do you pass data between steps?
-- How do you retry only the failed step?
-
-The StateGraph is the answer — it's a deterministic state machine for AI workflows.
-
----
-
-### Event-Driven Systems
-
-n8n implements event-driven architecture: instead of polling for results, your system emits events (`report_complete`) and n8n **reacts** to them. This decouples the AI pipeline from downstream actions.
-
----
-
-### State Management
-
-LangGraph's TypedDict state ensures:
-- Every node knows exactly what data is available
-- Type errors are caught at development time
-- State is serializable for checkpointing
-- The graph execution is deterministic and debuggable
-
----
-
-### Observability
-
-Add structured logging to every node:
-
-```python
-import logging
-
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
-
-async def planner_node(state):
-    logger.info(f"[PLANNER] Starting for job {state['job_id']}")
-    # ... processing ...
-    logger.info(f"[PLANNER] Generated {len(sub_queries)} sub-queries")
-```
-
----
-
-## 17. Common Mistakes & Solutions
-
-### Mistake 1: Overengineering on Day 1
-
-**Problem**: Trying to implement RAG, CrewAI, LangGraph, and a frontend simultaneously.  
-**Solution**: Follow the day-by-day plan strictly. Ship a working MVP each day.
-
----
-
-### Mistake 2: Context Window Overflow
-
-**Problem**: Passing all research results into a single LLM call, exceeding the context limit.  
-**Solution**:
-```python
-# Limit context size
-context = "\n".join([r["content"][:1000] for r in results[:6]])
-# Max ~6000 tokens — well within GPT-4o's 128k limit
-```
-
----
-
-### Mistake 3: Agent Infinite Loops
-
-**Problem**: CrewAI or LangGraph agent keeps retrying indefinitely.  
-**Solution**:
-```python
-# LangGraph: add retry limit
-if state["retry_count"] >= 3:
-    return "reporter"  # Force exit
-
-# CrewAI: set max iterations
-Agent(max_iter=5)  # Never let an agent run more than 5 times
-```
-
----
-
-### Mistake 4: Workflow Failures With No Error Info
-
-**Problem**: Background task fails silently, no error visible.  
-**Solution**:
-```python
-async def run_pipeline(job_id: str, query: str):
-    try:
-        result = await research_graph.ainvoke(initial_state, config)
-    except Exception as e:
-        logger.error(f"Pipeline failed for job {job_id}: {e}")
-        # Update job status to "failed" in DB
-```
-
----
-
-### Mistake 5: Blocking the Event Loop
-
-**Problem**: Running synchronous code (like `crew.kickoff()`) inside an `async` function.  
-**Solution**:
-```python
-import asyncio
-
+# CORRECT — runs in thread pool
 loop = asyncio.get_event_loop()
 result = await loop.run_in_executor(None, crew.kickoff)
-# run_in_executor runs sync code in a thread pool
 ```
 
 ---
 
-### Mistake 6: Prompt Issues
+### Mistake 2: Context Window Overflow in Nodes
 
-**Problem**: Inconsistent LLM responses, wrong format, hallucinations.  
-**Solution**:
-- Use `response_format={"type": "json_object"}` when expecting JSON
-- Set `temperature=0.1–0.3` for factual tasks
-- Always include explicit output format instructions in prompts
-- Validate LLM output before passing to next node
+```python
+# WRONG — passes all raw content to LLM
+context = str(state["raw_results"])  # could be 50,000 tokens
+
+# CORRECT — truncate and limit
+from app.utils.text_utils import compile_context
+context = compile_context(state["raw_results"], max_results=6)
+# ~6000 tokens max
+```
 
 ---
 
-### Mistake 7: n8n Webhook Not Receiving Data
+### Mistake 3: Not Handling LLM JSON Parse Failures
 
-**Problem**: FastAPI sends webhook but n8n shows no execution.  
-**Solution**:
+```python
+# WRONG — crashes on bad JSON
+data = json.loads(response.choices[0].message.content)
+
+# CORRECT — fallback gracefully
+try:
+    data = json.loads(response.choices[0].message.content)
+    sub_queries = data.get("queries", [state["query"]])
+except (json.JSONDecodeError, KeyError):
+    logger.warning("JSON parse failed — using base query")
+    sub_queries = [state["query"]]
+```
+
+---
+
+### Mistake 4: Background Task Errors Silently Disappearing
+
+```python
+# WRONG — no error handling
+background_tasks.add_task(run_pipeline, job_id, query, depth)
+
+# CORRECT — wrap pipeline in try/except, update DB on failure
+async def run_pipeline(job_id, query, depth):
+    try:
+        await research_graph.ainvoke(...)
+    except Exception as e:
+        logger.error(f"Pipeline failed: {e}")
+        await update_job(job_id, status="failed", error=str(e))
+        await notifier.job_failed(job_id, query, str(e))
+```
+
+---
+
+### Mistake 5: LangGraph Retry Node Mutating State Incorrectly
+
+```python
+# WRONG — modifying state dict directly in routing function
+def route_after_research(state):
+    state["retry_count"] += 1  # This may not persist correctly
+    return "retry"
+
+# CORRECT — return updated fields from the node itself
+async def researcher_node(state):
+    # ... search logic ...
+    return {
+        "raw_results": results,
+        "sources_count": len(results),
+        "retry_count": state.get("retry_count", 0) + 1  # update here
+    }
+```
+
+---
+
+### Mistake 6: Using Synchronous File Writes in Async Context
+
+```python
+# WRONG — blocks event loop
+with open(file_path, "w") as f:
+    f.write(content)
+
+# CORRECT — async file writes
+import aiofiles
+async with aiofiles.open(file_path, "w") as f:
+    await f.write(content)
+```
+
+---
+
+## 14. Optional: Add n8n Later
+
+> **Read this when**: Your system is working, and you want Slack notifications, Google Drive uploads, scheduled research, or third-party integrations — without writing authentication code.
+
+---
+
+### When n8n Becomes Worth Adding
+
+| Scenario | Without n8n | With n8n |
+|---|---|---|
+| Slack notification on report complete | Write Slack API code + OAuth | 2 nodes, drag and drop |
+| Save report to Google Drive | Google API + OAuth2 flow | 1 Google Drive node |
+| Daily scheduled research job | APScheduler + cron | n8n Schedule trigger |
+| Email with report attached | smtplib code | Gmail node, 1 click |
+| Notify Notion database | Notion API code | Notion node |
+| Post to Teams/Discord/Telegram | Each API separately | Single HTTP Request node |
+
+**Rule of thumb**: If you need 2+ third-party integrations, add n8n. If you need 0–1, stay pure Python.
+
+---
+
+### How to Add n8n Without Breaking Existing System
+
+The integration is purely **additive** — you don't touch any existing code.
+
+#### Step 1: Install n8n
+
 ```bash
-# Verify n8n is running
-curl http://localhost:5678/
+# Install n8n globally
+npm install -g n8n
 
-# Check webhook URL matches exactly
-echo $N8N_WEBHOOK_URL
-
-# Test webhook directly
-curl -X POST http://localhost:5678/webhook/research \
-  -H "Content-Type: application/json" \
-  -d '{"test": "ping"}'
+# Start n8n
+n8n start
+# Visit: http://localhost:5678
 ```
 
 ---
 
-## 18. MVP Strategy
+#### Step 2: Add n8n Webhook Call to NotificationService
 
-### Minimum Viable System (What Must Work)
+Modify **only** `app/services/notification_service.py` — add one optional method:
 
-| Feature | Priority | Day |
-|---------|---------|-----|
-| POST endpoint accepts a query | Must | Day 1 |
-| n8n receives webhook event | Must | Day 1 |
-| Web search executes | Must | Day 2 |
-| Markdown report generated and saved | Must | Day 2 |
-| LangGraph graph runs end-to-end | Must | Day 3 |
-| CrewAI crew produces report | Must | Day 4 |
+```python
+import os
+import httpx
 
----
+class NotificationService:
+    # ... existing methods unchanged ...
 
-### What to Postpone
+    async def _trigger_n8n(self, event: str, payload: dict):
+        """
+        Optional n8n webhook trigger.
+        Only fires if N8N_WEBHOOK_URL is set in .env.
+        Existing behavior is completely unchanged if not set.
+        """
+        webhook_url = os.getenv("N8N_WEBHOOK_URL")
+        if not webhook_url:
+            return  # n8n not configured — skip silently
 
-| Feature | Reason to Postpone |
-|---------|-------------------|
-| Frontend UI | Adds complexity, not needed for core validation |
-| User authentication | No multi-user scenario in local dev |
-| PostgreSQL | SQLite is sufficient initially |
-| RAG pipeline | Only needed when you have a document library |
-| PDF generation | Markdown is sufficient for validation |
-| Streaming responses | Complexity not needed in MVP |
+        full_payload = {
+            "event": event,
+            "timestamp": datetime.utcnow().isoformat(),
+            **payload
+        }
 
----
-
-### Scaling Strategy
-
-```
-MVP (Day 1):     Simple webhook trigger
-↓
-Core (Day 2):    Real research + reports
-↓
-Orchestrated (Day 3): LangGraph workflows
-↓
-Multi-Agent (Day 4):  CrewAI collaboration
-↓
-Phase 3:         RAG + vector memory
-↓
-Phase 4:         Frontend + auth + dashboard
-↓
-Phase 5:         Local LLMs + voice agents
+        try:
+            async with httpx.AsyncClient() as client:
+                await client.post(webhook_url, json=full_payload, timeout=10.0)
+            logger.debug(f"n8n triggered: {event}")
+        except Exception as e:
+            logger.warning(f"n8n webhook failed (non-critical): {e}")
+            # Never let n8n failure break the main pipeline
 ```
 
----
+Then call it from your existing methods:
 
-## 19. Future Enhancements
+```python
+async def job_complete(self, job_id, query, report_path, sources_count, duration):
+    # ... existing terminal output and log (unchanged) ...
 
-### Frontend Dashboard
-- React + Vite for the UI
-- WebSocket connection for real-time job status
-- Report viewer with Markdown rendering
-- Job history and management
-
-### Authentication
-- FastAPI OAuth2 with JWT tokens
-- API key management for different users
-- Rate limiting per user
-
-### Advanced Memory
-- Qdrant for production-grade vector search
-- Redis for fast in-memory caching
-- PostgreSQL for persistent job history
-- Report deduplication using semantic similarity
-
-### Local LLMs
-- Ollama for running models locally (no API costs)
-- LLaMA 3 or Mistral for research tasks
-- Specialized models for different agent roles
-
-### Browser Automation
-- Playwright integration for accessing paywalled content
-- Screenshot capture for visual data extraction
-- Form submission automation
-
-### Voice Agents
-- Whisper for speech-to-text query input
-- ElevenLabs for report audio summaries
-- Real-time voice research interface
-
-### MCP (Model Context Protocol)
-- Connect agents to external tools via MCP servers
-- Database access, file systems, APIs via standardized protocol
-
----
-
-## 20. Final Expected Architecture
-
-### Complete System Architecture (Day 4)
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                        EXTERNAL INTERFACES                           │
-│                                                                       │
-│     Postman / curl          n8n Dashboard        Future: React UI    │
-└──────────────┬───────────────────┬───────────────────────────────────┘
-               │                   │ (webhooks)
-               ▼                   ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                         FASTAPI LAYER                                 │
-│                                                                       │
-│  POST /research/          GET /research/{id}      GET /health        │
-│  BackgroundTask runner    Status checker          Health check       │
-└───────────────────────────────┬─────────────────────────────────────┘
-                                │
-                                ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                    LANGGRAPH STATE MACHINE                            │
-│                                                                       │
-│  ┌──────────┐   ┌────────────┐   ┌──────────┐   ┌──────────────┐  │
-│  │ PLANNER  │──→│ RESEARCHER │──→│ ANALYZER │──→│   REPORTER   │  │
-│  │   NODE   │   │    NODE    │   │   NODE   │   │    NODE      │  │
-│  └──────────┘   └─────┬──────┘   └──────────┘   └──────┬───────┘  │
-│                        │ retry logic                      │          │
-│  ResearchState ◄────── ┘                                 │          │
-│  TypedDict                                                │          │
-└───────────────────────────────────────────────────────┬──┘──────────┘
-                                                        │
-                                                        ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                      CREWAI MULTI-AGENT SYSTEM                        │
-│                                                                       │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌───────────┐ │
-│  │   PLANNER   │→ │  RESEARCH   │→ │   WRITER    │→ │ REVIEWER  │ │
-│  │    AGENT    │  │    AGENT    │  │    AGENT    │  │   AGENT   │ │
-│  │             │  │  + Tools:   │  │             │  │           │ │
-│  │             │  │  Serper     │  │             │  │           │ │
-│  │             │  │  WebSearch  │  │             │  │           │ │
-│  └─────────────┘  └─────────────┘  └─────────────┘  └───────────┘ │
-└───────────────────────────────────────────────────────┬─────────────┘
-                                                        │
-                    ┌───────────────────────────────────┘
-                    │
-         ┌──────────▼───────────────────────────────────────────────┐
-         │                    OUTPUT LAYER                            │
-         │                                                            │
-         │  /reports/report_{id}_{timestamp}.md                      │
-         │                          │                                 │
-         │                          ▼                                 │
-         │                [n8n Webhook Triggered]                     │
-         │                    │              │                        │
-         │              Save to disk   Send notification              │
-         └────────────────────────────────────────────────────────────┘
+    # Optional n8n trigger — fires only if N8N_WEBHOOK_URL is set
+    await self._trigger_n8n("job_complete", {
+        "job_id": job_id,
+        "query": query,
+        "report_path": report_path,
+        "sources_count": sources_count,
+        "duration_seconds": duration
+    })
 ```
 
 ---
 
-## 21. Final Project Outcome
+#### Step 3: Add to .env (Only When Ready)
 
-### What the Final System Can Do
-
-By the end of Day 4, you have a system that:
-
-1. **Accepts** a natural language research query via REST API
-2. **Plans** research automatically by breaking the query into sub-queries
-3. **Searches** the web across multiple targeted queries
-4. **Analyzes** findings and extracts structured insights
-5. **Orchestrates** specialized AI agents for planning, research, writing, and review
-6. **Generates** a professional, multi-section research report in Markdown
-7. **Saves** the report to the local filesystem
-8. **Notifies** external systems via n8n webhooks
-9. **Retries** automatically when searches return insufficient results
-10. **Logs** every step for observability and debugging
+```env
+# Add this line to .env when you want n8n active
+# Leave it out or commented to disable n8n completely
+N8N_WEBHOOK_URL=http://localhost:5678/webhook/research-complete
+```
 
 ---
 
-### Engineering Skills Demonstrated
+#### Step 4: Build n8n Workflows
 
-| Skill Category | What You've Built |
-|---------------|------------------|
-| **API Design** | RESTful FastAPI with async endpoints, Pydantic validation, background tasks |
-| **AI Orchestration** | LangGraph stateful workflow with conditional routing and checkpointing |
-| **Multi-Agent Systems** | CrewAI role-based agents with task delegation and sequential process |
-| **Workflow Automation** | n8n webhook integration with event-driven notifications |
-| **Async Python** | Non-blocking I/O, background tasks, async service layers |
-| **Clean Architecture** | Layered design: router → service → graph → agent |
-| **State Management** | TypedDict state, memory persistence, workflow checkpoints |
-| **Tool Integration** | Tavily search, OpenAI LLM, Serper, file system |
+**Workflow 1: Report Complete → Slack Notification**
 
----
-
-### Why This Project Is Portfolio-Worthy
-
-This project demonstrates capabilities that are in **extremely high demand** in 2024–2025:
-
-- **Agentic AI development** is the frontier of enterprise software
-- **LangGraph** is the production standard for AI workflow orchestration
-- **CrewAI** is leading multi-agent frameworks
-- **RAG pipelines** are the foundation of enterprise AI knowledge systems
-- **n8n** proves integration/automation engineering skills
-
-Most engineers who claim "AI experience" have only built chatbots. This system demonstrates **systems-level thinking** — how to build autonomous, reliable, production-grade AI workflows.
+```
+[Webhook: POST /webhook/research-complete]
+         │
+         ▼
+[IF: event == "job_complete"]
+         │
+         ▼
+[Slack: Send Message]
+  Channel: #research-reports
+  Message: "✅ Report ready!\nQuery: {{$json.query}}\nFile: {{$json.report_path}}"
+```
 
 ---
 
-### How This Resembles Enterprise AI Systems
+**Workflow 2: Report Complete → Save to Google Drive**
 
-| Your System | Enterprise Equivalent |
-|------------|----------------------|
-| FastAPI backend | Enterprise AI gateway |
-| LangGraph orchestration | Workflow execution engine |
-| CrewAI agents | AI workforce automation |
-| n8n integration | Enterprise integration platform (Zapier/Workato) |
-| Research pipeline | Market intelligence system |
-| RAG (Phase 3) | Enterprise knowledge base |
-| PostgreSQL (Phase 3) | Audit-grade data persistence |
-
----
-
-*This documentation was generated as a complete implementation blueprint for the Autonomous AI Research & Report Generation System. Follow the day-wise plan strictly, test at every step, and scale complexity incrementally.*
+```
+[Webhook: POST /webhook/research-complete]
+         │
+         ▼
+[Read Binary File: {{$json.report_path}}]
+         │
+         ▼
+[Google Drive: Upload File]
+  Folder: Research Reports/
+  Filename: {{$json.job_id}}_report.md
+```
 
 ---
 
-**Version**: 1.0.0  
-**Last Updated**: 2024  
-**Scope**: Local Development · Portfolio-Grade · Learning & Implementation
+**Workflow 3: Scheduled Daily Research**
+
+```
+[Schedule Trigger: Every day at 08:00]
+         │
+         ▼
+[HTTP Request: POST http://localhost:8000/research/]
+  Body: {
+    "query": "AI industry daily briefing {{$now.format('MMMM D, YYYY')}}",
+    "depth": "quick"
+  }
+         │
+         ▼
+[Set: Store job_id for monitoring]
+```
+
+---
+
+**Workflow 4: Report Complete → Notion Database Entry**
+
+```
+[Webhook: research-complete]
+         │
+         ▼
+[Notion: Create Database Item]
+  Database: Research Reports
+  Properties:
+    Title: {{$json.query}}
+    Status: Complete
+    File Path: {{$json.report_path}}
+    Sources: {{$json.sources_count}}
+    Date: {{$now}}
+```
+
+---
+
+### n8n Integration Architecture (When Added)
+
+```
+EXISTING SYSTEM (unchanged):
+  FastAPI → LangGraph → CrewAI → File System → SQLite → Terminal
+
+ADDED LAYER (purely optional):
+  NotificationService._trigger_n8n()
+         │
+         ▼
+  n8n Webhook (localhost:5678)
+    ├── Workflow 1: Slack notification
+    ├── Workflow 2: Google Drive upload
+    ├── Workflow 3: Notion entry
+    └── Workflow 4: Email with attachment
+```
+
+**Key design principle**: n8n is a **side-channel** — the main pipeline never depends on it. If n8n is down, the research still completes, the report is still saved, and only the notifications are missed.
+
+---
+
+### n8n Quick Reference
+
+| Task | n8n Node |
+|------|---------|
+| Receive event from Python | Webhook node |
+| Send Slack message | Slack node |
+| Send email | Gmail / SMTP node |
+| Save to Google Drive | Google Drive node |
+| Create Notion record | Notion node |
+| Run on a schedule | Schedule Trigger node |
+| Call FastAPI | HTTP Request node |
+| Save file to disk | Write Binary File node |
+| Branch on condition | IF node |
+| Wait before next step | Wait node |
+
+---
+
+### Summary: n8n Decision Guide
+
+```
+Do you need third-party integrations? (Slack, Drive, Notion, Teams)
+  YES → Add n8n. Takes 30 min to set up.
+  NO  → Stay pure Python. Jobs done.
+
+Do you need scheduled research? (daily briefings, cron jobs)
+  YES → Either APScheduler (Python) or n8n Schedule Trigger
+  NO  → Don't need either.
+
+Do you need to connect 3+ external services?
+  YES → n8n is the right tool. Visual editor saves days of API work.
+  NO  → NotificationService handles everything in Python.
+```
+
+---
+
+*End of Documentation*
+
+---
+
+**Version**: 2.0.0 — Clean Python, No n8n Required  
+**n8n**: Optional integration guide in Section 14  
+**Stack**: FastAPI · LangGraph · CrewAI · SQLite · Rich
