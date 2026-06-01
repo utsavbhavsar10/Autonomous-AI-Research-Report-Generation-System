@@ -16,3 +16,5 @@ aiofiles
 python-multipart
 aiosqlite
 rich
+langgraph
+langchain-core

@@ -21,6 +21,7 @@ async def init_db():
                 report_path TEXT,
                 sources_count INTEGER DEFAULT 0,
                 error TEXT,
+                progress TEXT,
                 created_at TEXT NOT NULL,
                 completed_at TEXT,
                 duration_seconds REAL
@@ -50,6 +51,11 @@ async def update_job(job_id: str, **kwargs):
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute(f"UPDATE jobs SET {fields} WHERE job_id = ?", values)
         await db.commit()
+
+    if 'status' in kwargs or 'progress' in kwargs:
+        status = kwargs.get('status', '')
+        progress = kwargs.get('progress', '')
+        logger.info(f"Job {job_id[:8]} updated: status={status}, progress={progress}")
 
 
 async def get_job(job_id: str) -> Optional[dict]:
