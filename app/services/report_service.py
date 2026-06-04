@@ -20,11 +20,23 @@ class ReportService:
         logger.info("ReportService initialized with OpenAI API")
 
     async def generate_report(self, query: str, research_data: list[dict]) -> str:
-        """Generate a professional research report using OpenAI"""
+        """Generate a professional research report.
+
+        When USE_CREW=true (default) the CrewAI multi-agent pipeline drafts the
+        report. Set USE_CREW=false to fall back to the Day 3 single OpenAI call.
+        """
 
         if not research_data:
             logger.warning("No research data provided for report generation")
             return self._generate_empty_report(query)
+
+        if os.getenv("USE_CREW", "true").lower() == "true":
+            from app.crew.crew import run_crew
+            logger.info(
+                f"Delegating report generation to CrewAI | query={query!r} | "
+                f"sources={len(research_data)}"
+            )
+            return await run_crew(query, research_data)
 
         context = self._compile_context(research_data)
         logger.info(f"Generating report for query: '{query}' with {len(research_data)} sources")

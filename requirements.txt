@@ -11,6 +11,7 @@ langchain-community
 tavily-python
 pypdf2
 markdown
+playwright
 beautifulsoup4
 aiofiles
 python-multipart
@@ -18,3 +19,7 @@ aiosqlite
 rich
 langgraph
 langchain-core
+crewai
+crewai-tools
+streamlit
+# uv pip install -U langsmith crewai openinference-instrumentation-crewai openinference-instrumentation-openai
