@@ -28,7 +28,6 @@ async def download_report(filename: str):
         filename=filename,
     )
 
-
 @router.get("/{filename}/pdf")
 async def download_report_pdf(filename: str):
     """Download a generated report as a PDF."""

@@ -13,7 +13,6 @@ def _keep_latest(_old, new):
     """
     return new
 
-
 class ResearchState(TypedDict, total=False):
     # Inputs (set once at graph entry)
     job_id: str
@@ -41,6 +40,5 @@ class ResearchState(TypedDict, total=False):
     report_markdown: Optional[str]
     report_path: Optional[str]
 
-    # Bookkeeping
     error: Optional[str]
     current_step: str

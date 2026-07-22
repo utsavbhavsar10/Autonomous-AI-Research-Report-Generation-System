@@ -28,4 +28,5 @@ class ResearchService:
             "status": "failed" if final_state.get("error") else "complete",
             "file_path": final_state.get("report_path", ""),
             "sources": len(final_state.get("sources", [])),
+            "error": final_state.get("error"),
         }

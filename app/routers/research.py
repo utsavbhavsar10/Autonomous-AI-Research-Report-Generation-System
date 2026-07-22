@@ -32,6 +32,17 @@ async def run_pipeline(job_id: str, query: str, depth: str):
         completed_at = datetime.now(timezone.utc)
         duration = (completed_at - start_time).total_seconds()
 
+        if result.get("status") == "failed":
+            await update_job(
+                job_id,
+                status="failed",
+                sources_count=result.get("sources", 0),
+                completed_at=completed_at.isoformat(),
+                duration_seconds=duration,
+            )
+            await notifier.job_failed(job_id, query, result.get("error", "Pipeline failed"))
+            return
+
         await update_job(
             job_id,
             status="complete",
